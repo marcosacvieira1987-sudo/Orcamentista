@@ -1,0 +1,20 @@
+import type { Metadata, Viewport } from 'next';
+import { PRODUTO, SLOGAN } from '@/lib/marca';
+import './globals.css';
+
+export const metadata: Metadata = { title: PRODUTO, description: SLOGAN };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#F2F3F0' };
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="pt-PT">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=Geist+Mono:wght@400..600&display=swap" />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}

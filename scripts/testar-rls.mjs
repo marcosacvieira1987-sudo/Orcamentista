@@ -1,0 +1,64 @@
+// Testa o isolamento entre contas (RLS) contra um Supabase local: `supabase start` e depois
+// node scripts/testar-rls.mjs  (lê NEXT_PUBLIC_SUPABASE_URL e a chave pública de .env.local)
+import { createClient } from '@supabase/supabase-js';
+import { readFileSync } from 'node:fs';
+
+const env = Object.fromEntries(readFileSync('.env.local', 'utf8').split('\n').filter((l) => l.includes('=')).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]));
+const URL = env.NEXT_PUBLIC_SUPABASE_URL, KEY = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+let falhas = 0;
+const ok = (cond, msg) => { console.log((cond ? 'OK   ' : 'FALHA') + ' ' + msg); if (!cond) falhas++; };
+
+async function conta(nome) {
+  const sb = createClient(URL, KEY, { auth: { persistSession: false } });
+  const email = `${nome}-${Date.now()}@teste.pt`;
+  const { data, error } = await sb.auth.signUp({ email, password: 'palavra-passe-1', options: { data: { empresa: nome.toUpperCase() + ' Obras' } } });
+  if (error) throw error;
+  return { sb, id: data.user.id };
+}
+
+const A = await conta('ana'), B = await conta('bruno');
+
+const { data: empA } = await A.sb.from('empresas').select('*');
+ok(empA.length === 1 && empA[0].nome === 'ANA Obras', 'empresa criada no registo, com o nome indicado');
+const { data: empTodas } = await B.sb.from('empresas').select('user_id');
+ok(empTodas.length === 1 && empTodas[0].user_id === B.id, 'B só vê a sua empresa');
+
+const { data: orcA } = await A.sb.from('orcamentos').insert({ dados: { v: 1 }, dono: 'Cliente da Ana' }).select('id').single();
+ok(!!orcA?.id, 'A cria um orçamento');
+const { data: verB } = await B.sb.from('orcamentos').select('*').eq('id', orcA.id);
+ok(verB.length === 0, 'B não lê o orçamento de A');
+const { data: updB } = await B.sb.from('orcamentos').update({ dono: 'pirata' }).eq('id', orcA.id).select();
+ok(!updB || updB.length === 0, 'B não altera o orçamento de A');
+const { data: delB } = await B.sb.from('orcamentos').delete().eq('id', orcA.id).select();
+ok(!delB || delB.length === 0, 'B não apaga o orçamento de A');
+const { error: insB } = await B.sb.from('orcamentos').insert({ user_id: A.id, dados: {} });
+ok(!!insB, 'B não cria orçamentos em nome de A');
+const { data: empUpdB } = await B.sb.from('empresas').update({ nome: 'pirata' }).eq('user_id', A.id).select();
+ok(!empUpdB || empUpdB.length === 0, 'B não altera a empresa de A');
+
+const jpeg = new Blob([Uint8Array.from([0xff, 0xd8, 0xff, 0xd9])], { type: 'image/jpeg' });
+const { error: upA } = await A.sb.storage.from('fotos').upload(`${A.id}/${orcA.id}/f1.jpg`, jpeg, { contentType: 'image/jpeg' });
+ok(!upA, 'A carrega uma foto na sua pasta');
+const { error: upB } = await B.sb.storage.from('fotos').upload(`${A.id}/${orcA.id}/intruso.jpg`, jpeg, { contentType: 'image/jpeg' });
+ok(!!upB, 'B não carrega fotos na pasta de A');
+const { data: dlB } = await B.sb.storage.from('fotos').download(`${A.id}/${orcA.id}/f1.jpg`);
+ok(!dlB, 'B não descarrega fotos de A');
+const { data: signB } = await B.sb.storage.from('fotos').createSignedUrl(`${A.id}/${orcA.id}/f1.jpg`, 60);
+ok(!signB?.signedUrl, 'B não cria links para fotos de A');
+const { data: rmB } = await B.sb.storage.from('fotos').remove([`${A.id}/${orcA.id}/f1.jpg`]);
+ok(!rmB || rmB.length === 0, 'B não apaga fotos de A');
+const { data: dlA } = await A.sb.storage.from('fotos').download(`${A.id}/${orcA.id}/f1.jpg`);
+ok(!!dlA, 'a foto de A continua lá e A consegue lê-la');
+
+await A.sb.from('uso_ia').insert({ acao: 'teste' });
+const { data: usoDel } = await A.sb.from('uso_ia').delete().eq('user_id', A.id).select();
+ok(!usoDel || usoDel.length === 0, 'A não consegue apagar o seu registo de uso (limite diário não se contorna)');
+const { data: usoB } = await B.sb.from('uso_ia').select('*');
+ok(usoB.length === 0, 'B não vê o uso de A');
+
+const anon = createClient(URL, KEY, { auth: { persistSession: false } });
+const { data: anonO } = await anon.from('orcamentos').select('*');
+ok(anonO.length === 0, 'sem sessão não se lê nada');
+
+console.log(falhas ? `\n${falhas} falha(s)` : '\nTudo isolado.');
+process.exit(falhas ? 1 : 0);
