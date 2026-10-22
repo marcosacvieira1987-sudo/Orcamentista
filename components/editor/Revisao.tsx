@@ -8,7 +8,7 @@ import { AreaTexto, CampoNum, ICON } from './pecas';
 
 type Upd = (fn: (d: Estado) => void) => void;
 type Props = {
-  S: Estado; upd: Upd; empresa: Empresa; ocupado: boolean;
+  S: Estado; upd: Upd; empresa: Empresa; ocupado: boolean; custoIa: number | null;
   onAjuste: (instr: string) => Promise<boolean>; onAprovar: () => void; onVoltar: () => void; toast: (msg: string, desfazer?: () => void) => void;
 };
 
@@ -17,7 +17,8 @@ const acharLinha = (d: Estado, id: string) => {
   return null;
 };
 
-export default function Revisao({ S, upd, empresa, ocupado, onAjuste, onAprovar, onVoltar, toast }: Props) {
+export default function Revisao({ S, upd, empresa, ocupado, custoIa, onAjuste, onAprovar, onVoltar, toast }: Props) {
+  const completa = S.modelo === 'completo';
   const [outro, setOutro] = useState<string | null>(null);
   const [outroTxt, setOutroTxt] = useState('');
   const [ajuste, setAjuste] = useState('');
@@ -27,6 +28,7 @@ export default function Revisao({ S, upd, empresa, ocupado, onAjuste, onAprovar,
   const podeAprovar = ls.length > 0 && p.length === 0 && S.revisto;
   const numLinha = (id: string) => { const r = acharLinha(S, id); return r ? `${o.capitulos.indexOf(r.c) + 1}.${r.i + 1}` : ''; };
   const mudarLinha = (id: string, fn: (l: Linha) => void) => upd((d) => { const r = acharLinha(d, id); if (r) fn(r.l); });
+  const mudarCap = (id: string, fn: (c: Capitulo) => void) => upd((d) => { const c = d.orc!.capitulos.find((x) => x.id === id); if (c) fn(c); });
 
   function fixar(id: string) { mudarLinha(id, (l) => { l.fixado = true; }); if (outro === id) setOutro(null); }
   function usarPreco(id: string) {
@@ -164,6 +166,24 @@ export default function Revisao({ S, upd, empresa, ocupado, onAjuste, onAprovar,
       <div className="rev">
         <div className="rev-main">
           <section className="rev-pend" aria-label="Preços por confirmar">{pendBox}</section>
+          {completa ? (
+            <section className="sheet rev-textos" aria-label="Textos da proposta">
+              <div className="sh-h"><h2>Apresentação ao cliente</h2><span className="lab">Escrita pela IA · reveja</span></div>
+              <label className="f"><span className="lab">Carta <em>· **negrito** entre asteriscos</em></span><AreaTexto rows={8} value={o.apresentacao} placeholder="Exmo. Senhor …" onChange={(e) => upd((d) => { d.orc!.apresentacao = e.target.value; })} /></label>
+              <label className="f"><span className="lab">O que encontrámos</span><AreaTexto rows={3} value={o.encontramos} onChange={(e) => upd((d) => { d.orc!.encontramos = e.target.value; })} /></label>
+              <div className="f"><span className="lab">Fases da obra</span>
+                {o.fases.map((f, i) => (
+                  <div className="fase-ed" key={i}>
+                    <span className="mono small muted">Fase {i + 1}</span>
+                    <input value={f.titulo} placeholder="Ex.: Fechar as entradas de água" aria-label={`Título da fase ${i + 1}`} onChange={(e) => upd((d) => { d.orc!.fases[i].titulo = e.target.value; })} />
+                    <input value={f.descricao} placeholder="Uma frase sobre o que inclui" aria-label={`Descrição da fase ${i + 1}`} onChange={(e) => upd((d) => { d.orc!.fases[i].descricao = e.target.value; })} />
+                    {o.fases.length > 1 ? <button className="link danger" onClick={() => upd((d) => { d.orc!.fases.splice(i, 1); d.orc!.capitulos.forEach((c) => { if (c.fase > i + 1) c.fase -= 1; else if (c.fase === i + 1) c.fase = Math.max(1, i); }); })}>Remover</button> : null}
+                  </div>
+                ))}
+                <div><button className="btn dashed sm" onClick={() => upd((d) => { d.orc!.fases.push({ titulo: '', descricao: '' }); })}>{ICON.mais} Adicionar fase</button></div>
+              </div>
+            </section>
+          ) : null}
           <section className="rev-caps" aria-labelledby="mapa-t">
             <div className="grp-h plain"><h2 id="mapa-t">Mapa de quantidades</h2><span className="aside mono">{o.capitulos.length} {o.capitulos.length === 1 ? 'capítulo' : 'capítulos'} · {nl} {nl === 1 ? 'linha' : 'linhas'}</span></div>
             {o.capitulos.map((c, ci) => (
@@ -171,6 +191,19 @@ export default function Revisao({ S, upd, empresa, ocupado, onAjuste, onAprovar,
                 <header className="cap-h"><span className="cap-n">{pad(ci + 1)}</span>
                   <AreaTexto className="cap-nome" rows={1} value={c.nome} aria-label={`Nome do capítulo ${ci + 1}`} onChange={(e) => upd((d) => { const x = d.orc!.capitulos.find((k) => k.id === c.id); if (x) x.nome = e.target.value; })} />
                   <span className="cap-sub num">{fmtEUR(subtotal(c))}</span></header>
+                {completa ? (
+                  <details className="card cap-texto">
+                    <summary>Texto e fase do capítulo</summary>
+                    <label className="f"><span className="lab">Onde <em>· opcional</em></span><input value={c.subtitulo} placeholder="Ex.: Escritório, piso 1 e piso 2" onChange={(e) => mudarCap(c.id, (x) => { x.subtitulo = e.target.value; })} /></label>
+                    <label className="f"><span className="lab">Porque é preciso e como se faz</span><AreaTexto rows={3} value={c.descricao} onChange={(e) => mudarCap(c.id, (x) => { x.descricao = e.target.value; })} /></label>
+                    <label className="f"><span className="lab">Estado atual <em>· um por linha</em></span><ListaTexto valor={c.estado} rows={Math.max(2, Math.min(6, c.estado.length + 1))} placeholder="Ex.: telhas com musgo e algumas partidas" onValor={(v) => mudarCap(c.id, (x) => { x.estado = v; })} /></label>
+                    <label className="f"><span className="lab">Não incluído neste capítulo <em>· um por linha</em></span><ListaTexto valor={c.nao_incluido} rows={Math.max(2, Math.min(5, c.nao_incluido.length + 1))} placeholder="Ex.: substituição integral do telhado" onValor={(v) => mudarCap(c.id, (x) => { x.nao_incluido = v; })} /></label>
+                    <div className="f-grid">
+                      <label className="f"><span className="lab">Fase</span><select value={c.fase || 1} onChange={(e) => mudarCap(c.id, (x) => { x.fase = num(e.target.value) || 1; })}>{Array.from({ length: Math.max(1, o.fases.length) }, (_, i) => <option key={i} value={i + 1}>Fase {i + 1}{o.fases[i]?.titulo ? ` · ${o.fases[i].titulo}` : ''}</option>)}</select></label>
+                      <label className="f"><span className="lab">Prazo indicativo</span><input value={c.prazo} placeholder="Ex.: 2 semanas" onChange={(e) => mudarCap(c.id, (x) => { x.prazo = e.target.value; })} /></label>
+                    </div>
+                  </details>
+                ) : null}
                 {c.linhas.map((l, i) => linhaEl(c, l, ci, i))}
                 <div className="cap-f"><button className="btn dashed sm" onClick={() => addLinha(c.id)}>{ICON.mais} Acrescentar linha</button></div>
               </section>
@@ -185,6 +218,16 @@ export default function Revisao({ S, upd, empresa, ocupado, onAjuste, onAprovar,
         <div className="rev-side">
           {totalBox}
           <section className="sheet rev-meta" aria-label="Dados da proposta">
+            <div className="f"><span className="lab" id="lab-mod">Modelo do PDF</span>
+              <div className="chips" role="radiogroup" aria-labelledby="lab-mod">{([['completo', 'Completa'], ['rapido', 'Rápida']] as const).map(([v, t]) => <button key={v} type="button" className="chip" role="radio" aria-checked={S.modelo === v} onClick={() => upd((d) => { d.modelo = v; })}>{t}</button>)}</div>
+              {completa && !o.apresentacao ? <span className="small muted">Este orçamento foi montado no modelo rápido: para ter a carta e os textos dos capítulos, peça um ajuste à IA ou volte a montar o orçamento.</span> : null}
+            </div>
+            {completa ? (
+              <div className="f"><span className="lab" id="lab-pr">Preços no PDF</span>
+                <div className="chips" role="radiogroup" aria-labelledby="lab-pr">{([['capitulo', 'Valor por capítulo'], ['detalhado', 'Detalhados']] as const).map(([v, t]) => <button key={v} type="button" className="chip" role="radio" aria-checked={S.mostrar_precos === v} onClick={() => upd((d) => { d.mostrar_precos = v; })}>{t}</button>)}</div>
+              </div>
+            ) : null}
+            {completa ? <label className="f"><span className="lab">Título da obra</span><input value={o.titulo} placeholder={maiuscula(descObra(S.pedido.tipo))} onChange={(e) => upd((d) => { d.orc!.titulo = e.target.value; })} /></label> : null}
             <label className="f"><span className="lab">Proposta n.º</span><input className="mono" value={S.meta.numero} onChange={(e) => upd((d) => { d.meta.numero = e.target.value; })} /></label>
             <div className="f-grid">
               <label className="f"><span className="lab">Validade</span><span className="inl"><input inputMode="numeric" value={S.meta.validade} onChange={(e) => upd((d) => { d.meta.validade = Math.round(num(e.target.value)) || ''; })} /><span className="u">dias</span></span></label>
@@ -199,6 +242,7 @@ export default function Revisao({ S, upd, empresa, ocupado, onAjuste, onAprovar,
               if (await onAjuste(ajuste.trim())) setAjuste('');
             }}>Pedir ajuste</button>
           </section>
+          {custoIa !== null ? <p className="small muted rev-custo">Custo de IA deste orçamento: {custoIa.toFixed(2).replace('.', ',')} US$</p> : null}
           <div className="aprovar"><div className="apr-info">{info}</div><button className="btn primary lg" disabled={!podeAprovar} onClick={onAprovar}>Aprovar e gerar PDF</button></div>
         </div>
       </div>

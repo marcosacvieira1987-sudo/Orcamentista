@@ -8,10 +8,14 @@ export const dynamic = 'force-dynamic';
 
 export default async function Orcamentos() {
   const { sb } = await exigirUtilizador();
-  const [{ data: emp }, { data: lista }] = await Promise.all([
+  const [{ data: emp }, { data: lista }, { data: usos }] = await Promise.all([
     sb.from('empresas').select('nome, precos').maybeSingle(),
-    sb.from('orcamentos').select('id, estado, numero, tipo, localidade, dono, total, atualizado_em').order('atualizado_em', { ascending: false }).limit(200)
+    sb.from('orcamentos').select('id, estado, numero, tipo, localidade, dono, total, atualizado_em').order('atualizado_em', { ascending: false }).limit(200),
+    sb.from('uso_ia').select('orcamento_id, custo_usd').not('orcamento_id', 'is', null)
   ]);
+  // custo de IA por orçamento (vazio enquanto a migração 0002 não estiver aplicada)
+  const custo = new Map<string, number>();
+  for (const x of usos || []) custo.set(x.orcamento_id, (custo.get(x.orcamento_id) || 0) + Number(x.custo_usd || 0));
   const semConfig = !emp?.nome || !Array.isArray(emp?.precos) || emp.precos.length === 0;
   return (
     <div className="wrap">
@@ -33,7 +37,7 @@ export default async function Orcamentos() {
           {(lista || []).map((o) => (
             <Link key={o.id} href={`/orcamentos/${o.id}`} className="item">
               <span className="t1">{maiuscula(descObra(o.tipo))}{o.dono ? ` · ${o.dono}` : ''}</span>
-              <span className="t2">{[o.numero ? 'N.º ' + o.numero : '', o.localidade, fmtData(new Date(o.atualizado_em))].filter(Boolean).join(' · ')}</span>
+              <span className="t2">{[o.numero ? 'N.º ' + o.numero : '', o.localidade, fmtData(new Date(o.atualizado_em)), custo.get(o.id) ? `IA ${custo.get(o.id)!.toFixed(2).replace('.', ',')} US$` : ''].filter(Boolean).join(' · ')}</span>
               <span className="val">
                 <span className={'estado ' + o.estado}>{o.estado === 'aprovado' ? 'Aprovado' : 'Rascunho'}</span>
                 {o.total !== null ? <strong className="num">{fmtEUR(Number(o.total))}</strong> : null}

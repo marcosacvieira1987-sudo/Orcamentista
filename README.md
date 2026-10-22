@@ -14,7 +14,9 @@ Orçamentos de obras a partir de fotos. O profissional fotografa a obra, respond
 | Esboço pela IA (Claude API, só no servidor) | `app/api/ia/route.ts`, `lib/ia.ts`, `lib/prompts.ts` |
 | Revisão das linhas: preços por confirmar, ajustes pela IA, IVA por linha | `components/editor/Revisao.tsx` |
 | PDF com a marca do profissional (gerado no telemóvel) e partilha direta (WhatsApp, email) | `lib/pdf.ts` |
-| Lista de orçamentos (rascunho / aprovado, total) | `app/orcamentos/page.tsx` |
+| Lista de orçamentos (rascunho / aprovado, total, custo de IA) | `app/orcamentos/page.tsx` |
+| Dois modelos de proposta: **completa** (capas, carta, resumo por fases, o que encontrámos, um capítulo por página, condições gerais, adjudicação com plano de pagamentos e IBAN) e **rápida** | `lib/pdf.ts`, `lib/prompts.ts` |
+| Numeração sequencial por empresa (ex.: MMGS-2026-001) | `supabase/migrations/0002_proposta_completa.sql` |
 | RGPD: isolamento por conta, exportar dados, apagar conta | `supabase/migrations`, `app/api/conta`, `app/privacidade` |
 
 A lógica, os prompts e o desenho vêm do protótipo `Orçamentista` (HTML único): os prompts estão iguais, a normalização das respostas e os cálculos foram passados para `lib/orc.ts`, o PDF para `lib/pdf.ts` e o CSS para `app/globals.css`.
@@ -35,7 +37,9 @@ A lógica, os prompts e o desenho vêm do protótipo `Orçamentista` (HTML únic
 
 ### 1. Supabase
 1. Crie um projeto em [supabase.com](https://supabase.com), **região da UE** (ex.: Frankfurt, `eu-central-1`).
-2. Aplique o esquema `supabase/migrations/0001_inicial.sql`: cole-o no *SQL Editor* ou use `npx supabase link` + `npx supabase db push`.
+2. Aplique as migrações por ordem, no *SQL Editor* (ou com `npx supabase link` + `npx supabase db push`):
+   - `supabase/migrations/0001_inicial.sql` — tabelas, regras de acesso e ficheiros;
+   - `supabase/migrations/0002_proposta_completa.sql` — proposta completa, numeração sequencial e custo da IA por orçamento.
 3. *Authentication → URL Configuration*:
    - **Site URL**: o endereço da app (ex.: `https://prumo.vercel.app`).
    - **Redirect URLs**: `https://prumo.vercel.app/auth/confirmar` (e `http://localhost:3000/auth/confirmar` para desenvolvimento).

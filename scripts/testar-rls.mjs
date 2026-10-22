@@ -60,5 +60,16 @@ const anon = createClient(URL, KEY, { auth: { persistSession: false } });
 const { data: anonO } = await anon.from('orcamentos').select('*');
 ok(anonO.length === 0, 'sem sessão não se lê nada');
 
+// numeração sequencial por empresa (migração 0002)
+const n1 = (await A.sb.rpc('proximo_numero_proposta')).data, n2 = (await A.sb.rpc('proximo_numero_proposta')).data;
+const nb = (await B.sb.rpc('proximo_numero_proposta')).data;
+ok(/^ANA-\d{4}-001$/.test(n1) && /^ANA-\d{4}-002$/.test(n2), `numeração de A em sequência (${n1}, ${n2})`);
+ok(/^BRUNO-\d{4}-001$/.test(nb), `B tem a sua própria sequência (${nb})`);
+await A.sb.from('empresas').update({ prefixo: 'MMGS' }).eq('user_id', A.id);
+const n3 = (await A.sb.rpc('proximo_numero_proposta')).data;
+ok(/^MMGS-\d{4}-003$/.test(n3), `prefixo configurado e sequência mantida (${n3})`);
+const { error: usoErr } = await A.sb.from('uso_ia').insert({ acao: 'teste', orcamento_id: orcA.id, tokens_in: 1000, tokens_out: 500, custo_usd: 0.014 });
+ok(!usoErr, 'regista o custo da IA ligado ao orçamento');
+
 console.log(falhas ? `\n${falhas} falha(s)` : '\nTudo isolado.');
 process.exit(falhas ? 1 : 0);

@@ -9,6 +9,15 @@ export class ErroIA extends Error {
 }
 
 type Esforco = 'low' | 'medium' | 'high';
+
+// Consumo de um pedido, para o registo de custos (preços do modelo em US$ por milhão de tokens).
+export type Uso = { tokens_in: number; tokens_out: number; custo_usd: number };
+const PRECO = { entrada: 4, saida: 20, cache_leitura: 0.2, cache_escrita: 5 };
+function custo(u: Anthropic.Beta.BetaUsage): Uso {
+  const entrada = u.input_tokens || 0, leitura = u.cache_read_input_tokens || 0, escrita = u.cache_creation_input_tokens || 0, saida = u.output_tokens || 0;
+  const usd = (entrada * PRECO.entrada + leitura * PRECO.cache_leitura + escrita * PRECO.cache_escrita + saida * PRECO.saida) / 1e6;
+  return { tokens_in: entrada + leitura + escrita, tokens_out: saida, custo_usd: Math.round(usd * 10000) / 10000 };
+}
 type Imagem = { media_type: 'image/jpeg'; data: string };
 
 let cliente: Anthropic | null = null;
@@ -16,7 +25,7 @@ const claude = () => (cliente ??= new Anthropic());
 
 // Uma chamada ao Claude. Em streaming para pedidos longos (o orçamento pode demorar 1–2 minutos).
 // Fallback no servidor: se um classificador de segurança recusar o pedido, outro modelo continua.
-export async function perguntarClaude(prompt: string, { esforco = 'medium', imagens = [], maxTokens = 16000 }: { esforco?: Esforco; imagens?: Imagem[]; maxTokens?: number } = {}) {
+export async function perguntarClaude(prompt: string, { esforco = 'medium', imagens = [], maxTokens = 16000, onUso }: { esforco?: Esforco; imagens?: Imagem[]; maxTokens?: number; onUso?: (u: Uso) => void } = {}) {
   const content: Anthropic.Beta.BetaContentBlockParam[] = [
     ...imagens.map((im): Anthropic.Beta.BetaContentBlockParam => ({ type: 'image', source: { type: 'base64', media_type: im.media_type, data: im.data } })),
     { type: 'text', text: prompt }
@@ -44,6 +53,7 @@ export async function perguntarClaude(prompt: string, { esforco = 'medium', imag
     console.error('Claude ligação', e);
     throw new ErroIA('unavailable', 503);
   }
+  onUso?.(custo(msg.usage));
   if (msg.stop_reason === 'refusal') throw new ErroIA('refused', 422);
   const texto = msg.content.map((b) => (b.type === 'text' ? b.text : '')).join('').trim();
   if (!texto) throw new ErroIA('empty_completion');

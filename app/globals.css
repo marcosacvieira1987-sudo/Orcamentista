@@ -422,3 +422,17 @@ a{color:inherit}
 .legal p,.legal ul{margin:8px 0}
 /* o selo "Preço confirmado" usa .src.conf, que colidia com a caixa .conf dos totais */
 .src.conf{display:inline-flex;flex-direction:row;gap:6px;padding:0;border:0}
+/* proposta completa: textos, fases e texto de cada capítulo na revisão */
+.rev-textos{order:2}
+.rev-custo{order:7;margin:0}
+.cap-texto{margin:12px 0 4px}
+.cap-texto > summary{font-size:14px}
+.cap-texto .f{border-top:1px solid var(--hair)}
+.f select,.f > input{width:100%}
+.f select{height:36px;padding:0 6px;border:1px solid var(--hair);border-radius:4px;background:var(--surface);color:var(--ink);font:400 14px var(--sans)}
+.f textarea{width:100%}
+.fase-ed{display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px 10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--hair)}
+.fase-ed input{grid-column:2;height:34px;padding:0 8px;border:1px solid var(--hair);border-radius:4px;background:var(--surface-2);color:var(--ink);font:400 14px var(--sans);outline:none}
+.fase-ed input:focus{border-color:var(--accent)}
+.fase-ed .link{grid-column:2;justify-self:start;min-height:32px;padding:0}
+@media (min-width:1000px){.rev-custo{order:0}}

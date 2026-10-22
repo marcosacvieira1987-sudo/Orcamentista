@@ -12,6 +12,9 @@ export function lerEmpresa(row: Record<string, unknown> | null | undefined): Emp
   e.iva = num(e.iva) || 23;
   e.validade = Math.round(num(e.validade)) || 30;
   e.imprevistos = num(e.imprevistos);
+  for (const k of ['pag_adjudicacao', 'pag_inicio', 'pag_conclusao'] as const) e[k] = Math.min(100, Math.max(0, num(e[k])));
+  e.modelo = e.modelo === 'rapido' ? 'rapido' : 'completo';
+  e.mostrar_precos = e.mostrar_precos === 'detalhado' ? 'detalhado' : 'capitulo';
   e.precos = Array.isArray(r.precos) ? (r.precos as Record<string, unknown>[]).map(lerPreco) : [];
   return e;
 }

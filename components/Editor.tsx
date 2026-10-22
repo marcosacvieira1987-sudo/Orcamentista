@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { bytesDe, carregarFoto, urlsAssinadas } from '@/lib/fotos';
-import { descObra, LEITURA_VAZIA, juntarLeituras, linhas, numeroProposta, partesMarca, textoSeguro, TIPOS_OBRA, totais, validadePadrao, type Empresa, type Estado, type Leitura, type Orc, type Passo, type Pergunta } from '@/lib/orc';
+import { completarOrc, descObra, LEITURA_VAZIA, juntarLeituras, linhas, numeroProposta, partesMarca, textoSeguro, TIPOS_OBRA, totais, validadePadrao, type Empresa, type Estado, type Leitura, type Orc, type Passo, type Pergunta } from '@/lib/orc';
 import { descarregar, gerarPDF, nomeFicheiro } from '@/lib/pdf';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { deIso, fmtData, fmtEUR, isoHoje, maiuscula, norm, num, pad, uid, un } from '@/lib/util';
@@ -37,7 +37,12 @@ type Erro = { msg: string; retry?: 'ler' | 'perguntas' | 'orcar'; back: Passo };
 export default function Editor({ orcId, userId, inicial, empresa }: { orcId: string; userId: string; inicial: Estado; empresa: Empresa }) {
   const router = useRouter();
   const sb = supabaseBrowser();
-  const [S, setS] = useState<Estado>(inicial);
+  // orçamentos antigos: modelo e campos da proposta completa com os valores da empresa
+  const [S, setS] = useState<Estado>(() => ({
+    ...inicial, modelo: inicial.modelo || empresa.modelo, mostrar_precos: inicial.mostrar_precos || empresa.mostrar_precos,
+    orc: inicial.orc ? completarOrc(inicial.orc) : null
+  }));
+  const [custoIa, setCustoIa] = useState<number | null>(null);
   const [busy, setBusy] = useState<Ocupado | null>(null);
   const [erro, setErro] = useState<Erro | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
@@ -90,12 +95,19 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
   async function ia<T>(corpo: object): Promise<T> {
     const c = new AbortController(); ctl.current = c;
     let r: Response;
-    try { r = await fetch('/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo), signal: c.signal }); }
+    try { r = await fetch('/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...corpo, orcamentoId: orcId }), signal: c.signal }); }
     catch (e) { throw { code: (e as Error)?.name === 'AbortError' ? 'cancelled' : 'offline' }; }
     const j = await r.json().catch(() => ({ code: 'unavailable' }));
+    lerCusto();
     if (!r.ok) throw { code: j.code || 'unavailable' };
     return j as T;
   }
+  // Custo de IA acumulado deste orçamento (registado pela rota /api/ia).
+  const lerCusto = useCallback(async () => {
+    const { data, error } = await sb.from('uso_ia').select('custo_usd').eq('orcamento_id', orcId);
+    if (!error && data) setCustoIa(data.reduce((a: number, x: { custo_usd: number | string }) => a + Number(x.custo_usd || 0), 0));
+  }, [sb, orcId]);
+  useEffect(() => { lerCusto(); }, [lerCusto]);
   const codigo = (e: unknown) => (e as { code?: string })?.code;
   function falhou(e: unknown, retry: Erro['retry'], back: Passo) {
     setBusy(null);
@@ -156,10 +168,16 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
     setErro(null);
     setBusy({ label: 'A montar o orçamento', sub: 'Quantidades, preços e de onde vem cada preço. Pode levar um ou dois minutos.' });
     try {
-      const r = await ia<{ orc: Orc }>({ acao: 'orcamento', ctx: contexto(S) });
+      const r = await ia<{ orc: Orc }>({ acao: 'orcamento', ctx: contexto(S), modelo: S.modelo });
+      // numeração sequencial da empresa (ex.: MMGS-2026-001); sem a migração 0002, data + iniciais
+      let numero = S.meta.numero;
+      if (!numero) {
+        const { data } = await sb.rpc('proximo_numero_proposta');
+        numero = typeof data === 'string' && data ? data : numeroProposta(S.pedido.dono);
+      }
       upd((d) => {
         d.orc = r.orc; d.aprovado = false; d.revisto = false;
-        if (!d.meta.numero) d.meta.numero = numeroProposta(d.pedido.dono);
+        d.meta.numero = numero;
         d.meta.data = isoHoje();
         if (!d.meta.validade) d.meta.validade = validadePadrao(empresa);
         d.meta.prazo = r.orc.prazo || d.meta.prazo || '';
@@ -171,7 +189,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
   async function aplicarAjuste(instr: string) {
     setBusy({ label: 'A aplicar o ajuste', sub: instr.length > 90 ? instr.slice(0, 90) + '…' : instr });
     try {
-      const r = await ia<{ orc: Orc }>({ acao: 'ajuste', instr, orc: S.orc, prazo: S.meta.prazo });
+      const r = await ia<{ orc: Orc }>({ acao: 'ajuste', instr, orc: S.orc, prazo: S.meta.prazo, modelo: S.modelo });
       upd((d) => { d.orc = r.orc; d.revisto = false; if (r.orc.prazo) d.meta.prazo = r.orc.prazo; });
       setBusy(null);
       toast('Ajuste aplicado. Confirme os preços novos e marque de novo a revisão.');
@@ -219,7 +237,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
       empresa.logo_path ? bytesDe(sb, 'logos', empresa.logo_path) : Promise.resolve(null),
       ...S.fotos.map((f) => bytesDe(sb, 'fotos', f.path))
     ]);
-    return { empresa, logo, pedido: S.pedido, meta: S.meta, orc: S.orc!, totais: totais(S.orc, empresa), fotos, leitura: S.leitura, exemplo: false };
+    return { empresa, logo, pedido: S.pedido, meta: S.meta, orc: S.orc!, totais: totais(S.orc, empresa), fotos, leitura: S.leitura, exemplo: false, modelo: S.modelo, mostrarPrecos: S.mostrar_precos };
   }
   async function pdf(partilhar: boolean) {
     if (!S.orc) return;
@@ -298,6 +316,11 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
           <div className="f-grid">
             <label className="f"><span className="lab">Localidade</span><input value={p.localidade} placeholder="Ex.: Lisboa, Arroios" autoComplete="off" onChange={(e) => upd((d) => { d.pedido.localidade = e.target.value; })} /></label>
             <label className="f"><span className="lab">Dono de obra</span><input value={p.dono} placeholder="Nome, aparece na proposta" autoComplete="off" onChange={(e) => upd((d) => { d.pedido.dono = e.target.value; })} /></label>
+          </div>
+          <div className="f"><span className="lab" id="lab-modelo">Proposta</span>
+            <div className="chips" role="radiogroup" aria-labelledby="lab-modelo">
+              {([['completo', 'Completa: carta, capítulos e fases'], ['rapido', 'Rápida: resumo e mapa de preços']] as const).map(([v, t]) => <button key={v} type="button" className="chip" role="radio" aria-checked={S.modelo === v} onClick={() => upd((d) => { d.modelo = v; })}>{t}</button>)}
+            </div>
           </div>
           <label className="f"><span className="lab">Notas da visita</span><AreaTexto rows={3} value={p.notas} placeholder="O que o dono de obra quer, gama de materiais, quem compra os materiais, acessos, prazo…" onChange={(e) => upd((d) => { d.pedido.notas = e.target.value; })} /></label>
         </section>
@@ -449,6 +472,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
           <button className="btn primary lg" onClick={() => pdf(false)}>{ICON.baixar} Descarregar PDF</button>
           {podePartilhar ? <button className="btn lg" onClick={() => pdf(true)}>{ICON.partilhar} Partilhar PDF</button> : null}
           <p className="small muted" role="status">{pdfStatus}</p>
+          {custoIa !== null ? <p className="small muted">Custo de IA deste orçamento: {custoIa.toFixed(2).replace('.', ',')} US$</p> : null}
         </section>
         <section className="sheet">
           <div className="sh-h"><span className="lab" id="lab-msg">Mensagem</span><button className="link" onClick={escreverMensagem}>{S.mensagem ? 'Escrever outra' : 'Escrever com a IA'}</button></div>
@@ -469,7 +493,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
   else if (S.step === 'leitura' && S.leitura) corpo = vLeitura();
   else if (S.step === 'perguntas' && S.perguntas) corpo = vPerguntas();
   else if (S.step === 'medidas' && S.medidas) corpo = vMedidas();
-  else if (S.step === 'revisao' && S.orc) corpo = busy ? vOcupado() : <Revisao S={S} upd={upd} empresa={empresa} ocupado={!!busy} onAjuste={aplicarAjuste} onVoltar={() => go('medidas')} toast={toast} onAprovar={() => { upd((d) => { d.aprovado = true; }); setPdfStatus(''); go('pdf'); }} />;
+  else if (S.step === 'revisao' && S.orc) corpo = busy ? vOcupado() : <Revisao S={S} upd={upd} empresa={empresa} ocupado={!!busy} custoIa={custoIa} onAjuste={aplicarAjuste} onVoltar={() => go('medidas')} toast={toast} onAprovar={() => { upd((d) => { d.aprovado = true; }); setPdfStatus(''); go('pdf'); }} />;
   else if (S.step === 'pdf' && S.orc && S.aprovado) corpo = vPdf();
   else corpo = vPedido();
 
