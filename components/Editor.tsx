@@ -9,6 +9,7 @@ import { carregarFontes, descarregar, gerarPDF, nomeFicheiro } from '@/lib/pdf';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { deIso, fmtData, fmtEUR, isoHoje, maiuscula, norm, num, pad, uid, un } from '@/lib/util';
 import Revisao from './editor/Revisao';
+import Ditado from './editor/Ditado';
 import { AreaTexto, ICON, Plano } from './editor/pecas';
 
 const MAX_FOTOS = 40;
@@ -371,7 +372,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
       <>
         {intro('pedido', 'Novo orçamento', 'Escreva o pedido, junte as fotos da obra e responda ao que a IA perguntar. No fim revê os preços e recebe a proposta em PDF com a sua marca.')}
         <section className="sheet">
-          <label className="f"><span className="lab">O que precisa</span><AreaTexto rows={2} value={p.texto} onChange={(e) => upd((d) => { d.pedido.texto = e.target.value; })} /></label>
+          <label className="f"><span className="lab">O que precisa</span><AreaTexto rows={2} value={p.texto} onChange={(e) => upd((d) => { d.pedido.texto = e.target.value; })} /><Ditado valor={p.texto} onValor={(v) => upd((d) => { d.pedido.texto = v; })} /></label>
           <div className="f"><span className="lab" id="lab-tipo">Tipo de obra</span>
             <div className="chips" role="radiogroup" aria-labelledby="lab-tipo">{TIPOS_OBRA.map((t) => <button key={t} type="button" className="chip" role="radio" aria-checked={p.tipo === t} onClick={() => upd((d) => { d.pedido.tipo = d.pedido.tipo === t ? '' : t; })}>{t}</button>)}</div>
           </div>
@@ -388,7 +389,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
               {([['completo', 'Completa: carta, capítulos e fases'], ['rapido', 'Rápida: resumo e mapa de preços']] as const).map(([v, t]) => <button key={v} type="button" className="chip" role="radio" aria-checked={S.modelo === v} onClick={() => upd((d) => { d.modelo = v; })}>{t}</button>)}
             </div>
           </div>
-          <label className="f"><span className="lab">Notas da visita</span><AreaTexto rows={3} value={p.notas} placeholder="O que o dono de obra quer, gama de materiais, quem compra os materiais, acessos, prazo…" onChange={(e) => upd((d) => { d.pedido.notas = e.target.value; })} /></label>
+          <label className="f"><span className="lab">Notas da visita</span><AreaTexto rows={3} value={p.notas} placeholder="O que o dono de obra quer, gama de materiais, quem compra os materiais, acessos, prazo… Pode ditar por voz." onChange={(e) => upd((d) => { d.pedido.notas = e.target.value; })} /><Ditado valor={p.notas} onValor={(v) => upd((d) => { d.pedido.notas = v; })} rotulo="Ditar as notas" /></label>
         </section>
         <section className="fotos" aria-labelledby="lab-fotos">
           <div className="row-between"><span className="lab" id="lab-fotos">Fotografias</span><span className="mono small muted">{S.fotos.length ? `${S.fotos.length} de ${MAX_FOTOS}` : `Ainda sem fotos · até ${MAX_FOTOS}`}{aCarregar ? ` · a carregar ${aCarregar}…` : ''}</span></div>
@@ -434,7 +435,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
         {L.cotas_lidas.length ? <section className="blk"><span className="lab">Cotas lidas nas fotos</span><div className="cotas">{L.cotas_lidas.map((c, i) => <span key={i}>{c}</span>)}</div></section> : null}
         {L.fotos.length ? <details className="card"><summary>Descrição de cada foto</summary><div className="fotos-desc">{L.fotos.map((f) => <div key={f.n}>{imgFoto(f.n)}<p className="small"><strong>Foto {f.n}{f.divisao ? ' · ' + f.divisao : ''}.</strong> {f.descricao}</p></div>)}</div></details> : null}
         <section className="sheet">
-          <label className="f"><span className="lab">Correções ou informação extra</span><AreaTexto rows={3} value={S.correcao} placeholder="Ex.: a base de duche fica; o teto é só para pintar." onChange={(e) => upd((d) => { d.correcao = e.target.value; })} /></label>
+          <label className="f"><span className="lab">Correções ou informação extra</span><AreaTexto rows={3} value={S.correcao} placeholder="Ex.: a base de duche fica; o teto é só para pintar." onChange={(e) => upd((d) => { d.correcao = e.target.value; })} /><Ditado valor={S.correcao} onValor={(v) => upd((d) => { d.correcao = v; })} /></label>
         </section>
         <div className="actions"><button className="btn lg" onClick={() => go('pedido')}>Voltar</button><button className="btn primary lg grow" onClick={() => gerarPerguntas()}>Está certo, continuar {ICON.seta}</button></div>
       </>
@@ -469,7 +470,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
               </div>
             );
           })}
-          <label className="f"><span className="lab">Mais alguma coisa?</span><AreaTexto rows={2} value={S.extra} placeholder="Ex.: o dono de obra quer começar em novembro." onChange={(e) => upd((d) => { d.extra = e.target.value; })} /></label>
+          <label className="f"><span className="lab">Mais alguma coisa?</span><AreaTexto rows={2} value={S.extra} placeholder="Ex.: o dono de obra quer começar em novembro." onChange={(e) => upd((d) => { d.extra = e.target.value; })} /><Ditado valor={S.extra} onValor={(v) => upd((d) => { d.extra = v; })} /></label>
         </section>
         <div className="actions"><button className="btn lg" onClick={() => go(S.fotos.length || S.leitura?.fotos.length ? 'leitura' : 'pedido')}>Voltar</button><button className="btn primary lg grow" onClick={iniciarMedidas}>Continuar para as medidas {ICON.seta}</button></div>
       </>
@@ -555,7 +556,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
         </section>
         <section className="sheet">
           <div className="sh-h"><span className="lab" id="lab-msg">Mensagem</span><button className="link" onClick={escreverMensagem}>{S.mensagem ? 'Escrever outra' : 'Escrever com a IA'}</button></div>
-          <div className="f"><AreaTexto rows={6} aria-labelledby="lab-msg" value={S.mensagem} placeholder="Carregue em “Escrever com a IA” ou escreva aqui." onChange={(e) => upd((d) => { d.mensagem = e.target.value; })} /></div>
+          <div className="f"><AreaTexto rows={6} aria-labelledby="lab-msg" value={S.mensagem} placeholder="Carregue em “Escrever com a IA” ou escreva aqui." onChange={(e) => upd((d) => { d.mensagem = e.target.value; })} /><Ditado valor={S.mensagem} onValor={(v) => upd((d) => { d.mensagem = v; })} /></div>
           <div className="sh-f"><button className="btn wide" onClick={copiarMensagem}>{ICON.copiar} Copiar mensagem</button></div>
         </section>
         {S.orc!.a_confirmar.length ? <section className="card ms"><span className="lab">Confirmar na visita</span><ul>{S.orc!.a_confirmar.map((x, i) => <li key={i}>{x}</li>)}</ul></section> : null}

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Capitulo, Empresa, Estado, Linha } from '@/lib/orc';
 import { confianca, descObra, ivaPadrao, linhas, pendentes, subtotal, totais, totalLinha } from '@/lib/orc';
 import { fmtC, fmtEUR, fmtInput, fmtN, fmtPreco, fmtQ, maiuscula, num, pad, r2, uid, un } from '@/lib/util';
+import Ditado from './Ditado';
 import { AreaTexto, CampoNum, ICON } from './pecas';
 
 type Upd = (fn: (d: Estado) => void) => void;
@@ -169,7 +170,7 @@ export default function Revisao({ S, upd, empresa, ocupado, custoIa, onAjuste, o
           {completa ? (
             <section className="sheet rev-textos" aria-label="Textos da proposta">
               <div className="sh-h"><h2>Apresentação ao cliente</h2><span className="lab">Escrita pela IA · reveja</span></div>
-              <label className="f"><span className="lab">Carta <em>· **negrito** entre asteriscos</em></span><AreaTexto rows={8} value={o.apresentacao} placeholder="Exmo. Senhor …" onChange={(e) => upd((d) => { d.orc!.apresentacao = e.target.value; })} /></label>
+              <label className="f"><span className="lab">Carta <em>· **negrito** entre asteriscos</em></span><AreaTexto rows={8} value={o.apresentacao} placeholder="Exmo. Senhor …" onChange={(e) => upd((d) => { d.orc!.apresentacao = e.target.value; })} /><Ditado valor={o.apresentacao} onValor={(v) => upd((d) => { d.orc!.apresentacao = v; })} /></label>
               <label className="f"><span className="lab">O que encontrámos</span><AreaTexto rows={3} value={o.encontramos} onChange={(e) => upd((d) => { d.orc!.encontramos = e.target.value; })} /></label>
               <div className="f"><span className="lab">Fases da obra</span>
                 {o.fases.map((f, i) => (
@@ -237,6 +238,7 @@ export default function Revisao({ S, upd, empresa, ocupado, custoIa, onAjuste, o
           <section className="card rev-ajuste">
             <label htmlFor="f-ajuste">Pedir ajuste à IA</label>
             <textarea id="f-ajuste" rows={3} value={ajuste} onChange={(e) => setAjuste(e.target.value)} placeholder="Ex.: tira a pintura do teto; acrescenta a substituição da porta." />
+            <Ditado valor={ajuste} onValor={setAjuste} rotulo="Ditar o ajuste" />
             <button className="btn ink sm" disabled={ocupado} onClick={async () => {
               if (!ajuste.trim()) { toast('Escreva primeiro o ajuste que quer.'); return; }
               if (await onAjuste(ajuste.trim())) setAjuste('');

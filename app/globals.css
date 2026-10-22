@@ -440,3 +440,10 @@ a{color:inherit}
 .actions.actions-col{flex-direction:column;align-items:stretch;gap:8px}
 .actions.actions-col > .row{flex-wrap:nowrap}
 .actions.actions-col > p{margin:0}
+/* ditado por voz */
+.ditado{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:4px}
+.ditado-btn{min-height:36px;padding:0 12px;gap:6px;font-size:13px;color:var(--muted)}
+.ditado-btn.a-ouvir{border-color:var(--crit);color:var(--crit);animation:pulsar 1.4s ease-in-out infinite}
+@keyframes pulsar{50%{background:var(--pend-bg)}}
+@media (prefers-reduced-motion:reduce){.ditado-btn.a-ouvir{animation:none}}
+.ditado-prov{font-style:italic}
