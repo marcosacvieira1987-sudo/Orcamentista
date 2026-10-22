@@ -43,9 +43,13 @@ function pdfSafe(s: unknown) {
 }
 // Folga de 2% na largura: os leitores de PDF podem usar uma Helvetica substituta ligeiramente mais larga.
 const FOLGA = 0.98;
+// Valores (ex.: "7 011,00 €") nunca se partem entre linhas: os espaços dentro de números ficam inquebráveis.
+const NBSP = '\u00a0';
+const unirNumeros = (t: string) => t.replace(/(\d) (?=\d{3}\b)/g, `$1${NBSP}`).replace(/(\d) (?=€)/g, `$1${NBSP}`).replace(/€ (?=\+ IVA)/g, `€${NBSP}`);
+const separar = (t: string) => unirNumeros(pdfSafe(t)).split(/[ \t\r\n]+/).filter(Boolean);
 function quebrar(texto: string, font: PDFFont, size: number, largura: number) {
   const maxW = largura * FOLGA;
-  const words = pdfSafe(texto).split(/\s+/).filter(Boolean);
+  const words = separar(texto);
   const lines: string[] = []; let cur = '';
   for (const w of words) {
     const t = cur ? cur + ' ' + w : w;
@@ -77,7 +81,7 @@ function quebrarRico(texto: string, F: PDFFont, FB: PDFFont, size: number, largu
   const partes = String(texto || '').split('**');
   partes.forEach((parte, i) => {
     const colaInicio = i > 0 && !/^\s/.test(parte) && !/\s$/.test(partes[i - 1]);
-    pdfSafe(parte).split(/\s+/).filter(Boolean).forEach((t, j) => palavras.push({ t, b: i % 2 === 1, colada: j === 0 && colaInicio && palavras.length > 0 }));
+    separar(parte).forEach((t, j) => palavras.push({ t, b: i % 2 === 1, colada: j === 0 && colaInicio && palavras.length > 0 }));
   });
   const esp = F.widthOfTextAtSize(' ', size);
   const larg = (p: Palavra) => (p.b ? FB : F).widthOfTextAtSize(p.t, size);
@@ -474,7 +478,7 @@ async function completo(b: Base, d: DadosPDF) {
   t += 30;
   traco(c1, M, t, W - M, t, 0.75, C.HAIR);
   const execucao = variasFases ? `Em ${fases.length} fases` : d.meta.prazo || o.prazo || '-';
-  const metas: [string, string][] = [['Proposta n.º', d.meta.numero || '-'], ['Aos cuidados de', d.pedido.dono || '-'], [variasFases ? 'Execução' : 'Prazo indicativo', execucao], ['Valor global', `${vg(T.semIva)} + IVA`]];
+  const metas: [string, string][] = [['Proposta n.º', d.meta.numero || '-'], d.pedido.dono ? ['Aos cuidados de', d.pedido.dono] : ['Data', fmtData(dataP)], [variasFases ? 'Execução' : 'Prazo indicativo', execucao], ['Valor global', `${vg(T.semIva)} + IVA`]];
   const colW = (W - 2 * M) / 4;
   metas.forEach(([k, v], i) => {
     const x = M + i * colW;
@@ -558,6 +562,7 @@ async function completo(b: Base, d: DadosPDF) {
   ].filter(Boolean);
   subtitulo('O que garantimos');
   marcadores(garantias);
+  precisa(100); // despedida e assinatura sempre juntas
   paragrafo('Estamos disponíveis para esclarecer qualquer questão.', { depois: 10 });
   paragrafo('Com os melhores cumprimentos,', { depois: 14 });
   precisa(40);
@@ -625,7 +630,8 @@ async function completo(b: Base, d: DadosPDF) {
   }
 
   // 03 O que encontrámos
-  const nEnc = (o.fotos_encontramos.length ? o.fotos_encontramos : fotos.map((_, i) => i + 1)).filter(existe).slice(0, 6);
+  let nEnc = (o.fotos_encontramos.length ? o.fotos_encontramos : fotos.map((_, i) => i + 1)).filter(existe).slice(0, 6);
+  if (nEnc.length > 2 && nEnc.length % 2) nEnc = nEnc.slice(0, -1); // número par: nenhuma foto fica sozinha numa linha
   if (o.encontramos.trim() || nEnc.length) {
     tituloSecao('O que encontrámos');
     if (o.encontramos.trim()) paragrafo(o.encontramos, { rico: true, depois: 10 });
@@ -675,6 +681,7 @@ async function completo(b: Base, d: DadosPDF) {
     tabelaLinhas(b, k, [c], { precos: detalhado, ivaColuna: detalhado && T.ivas.length > 1, subtotais: false, numeroCap: ci + 1 });
     caixaValor('Valor global do capítulo', [variasFases ? `Fase ${c.fase || 1}` : '', c.prazo ? `prazo indicativo: ${c.prazo}` : ''].filter(Boolean).join(' · '), vg(valorCapitulo(c, o, e)));
     const naoCap = semIva(c.nao_incluido);
+    if (naoCap.length) precisa(quebrarRico(`**Não incluído:** ${naoCap.join('; ')}.`, F, FB, 8.5, W - 2 * M).length * 12.5 + 8);
     if (naoCap.length) paragrafo(`**Não incluído:** ${naoCap.join('; ').replace(/\.$/, '')}.`, { rico: true, size: 8.5, lh: 12.5 });
   });
 
@@ -682,11 +689,12 @@ async function completo(b: Base, d: DadosPDF) {
   tituloSecao('Condições gerais');
   if (e.garantia || e.seguro) {
     const gap = 14, cw = (W - 2 * M - gap) / 2;
-    const gls = quebrar(e.garantia_texto || 'Garantia sobre todos os trabalhos executados nas zonas intervencionadas.', F, 8.5, cw - 36);
+    const gls = quebrar(e.garantia_texto || 'Garantia sobre todos os trabalhos executados nas zonas intervencionadas.', F, 8.5, (e.seguro ? cw : W - 2 * M) - 36);
     const h = Math.max(120, 78 + gls.length * 12);
     precisa(h + 16);
     if (e.garantia) {
-      caixa(s.page, M, s.y, cw, h, { fundo: C.INK, topo: C.BR_SOBRE_ESCURO });
+      const wg = e.seguro ? cw : W - 2 * M;
+      caixa(s.page, M, s.y, wg, h, { fundo: C.INK, topo: C.BR_SOBRE_ESCURO });
       rotulo(s.page, 'Garantia', M + 18, s.y + 22, C.BR_SOBRE_ESCURO, true);
       txt(s.page, e.garantia, M + 18, s.y + 50, FB, 20, C.BRANCO, -0.3);
       gls.forEach((ln, i) => txt(s.page, ln, M + 18, s.y + 72 + i * 12, F, 8.5, C.BRANCO));
@@ -706,7 +714,7 @@ async function completo(b: Base, d: DadosPDF) {
     ['Adjudicação', variasFases ? 'A proposta é adjudicada na totalidade, pelo valor global. Os capítulos são interligados e não são adjudicáveis em separado.' : 'A proposta é adjudicada na totalidade, pelo valor global.'],
     ['Fases', variasFases ? `Execução em ${fases.length} fases, pela ordem indicada: ${fases.map((f) => `Fase ${f.n}${f.titulo ? ' — ' + f.titulo.toLowerCase() : ''} (capítulo${f.capitulos.length > 1 ? 's' : ''} ${f.capitulos.join(', ')})`).join('; ')}.` : ''],
     ['Pagamento', textoPagamento(d, false)],
-    ['Prazos', variasFases ? 'Indicados em cada capítulo, a contar do início de cada fase. Nos trabalhos exteriores dependem das condições meteorológicas.' : d.meta.prazo || e.prazo || 'Indicados em cada capítulo.'],
+    ['Prazos', variasFases ? 'Indicados em cada capítulo, a contar do início de cada fase.' : d.meta.prazo || e.prazo || 'Indicados em cada capítulo.'],
     ['Execução', semIva(d.orc.pressupostos)],
     ['Não incluído', naoGeral],
     ['A confirmar', d.orc.a_confirmar],

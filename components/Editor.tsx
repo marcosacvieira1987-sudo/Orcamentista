@@ -172,7 +172,8 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
     try {
       const r = await ia<{ orc: Orc }>({ acao: 'orcamento', ctx: contexto(S), modelo: S.modelo });
       // numeração sequencial da empresa (ex.: MMGS-2026-001); sem a migração 0002, data + iniciais
-      let numero = S.meta.numero;
+      // número no formato antigo (data + iniciais, ex.: 2026-1022-XX) passa à numeração sequencial
+      let numero = /^\d{4}-\d{4}-[A-Z]{1,3}$/.test(S.meta.numero) ? '' : S.meta.numero;
       if (!numero) {
         const { data } = await sb.rpc('proximo_numero_proposta');
         numero = typeof data === 'string' && data ? data : numeroProposta(S.pedido.dono);
