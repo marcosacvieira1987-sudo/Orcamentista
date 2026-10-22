@@ -19,7 +19,12 @@ function traduz(msg: string) {
   if (/already registered|already exists/i.test(msg)) return 'Já existe uma conta com este email.';
   if (/password/i.test(msg) && /(short|least|weak)/i.test(msg)) return 'A palavra-passe é fraca. Use pelo menos 8 caracteres.';
   if (/rate|too many/i.test(msg)) return 'Demasiadas tentativas. Espere um pouco.';
-  return 'Não foi possível continuar. Tente de novo.';
+  if (/database error/i.test(msg)) return `A base de dados recusou o registo: confirme que a migração SQL foi aplicada no Supabase. (${msg})`;
+  if (/sending.*email|smtp/i.test(msg)) return `Não foi possível enviar o email de confirmação. Tente dentro de minutos. (${msg})`;
+  if (/failed to fetch|network|load failed/i.test(msg)) return `Sem ligação ao servidor de contas: verifique a ligação à internet e as variáveis do Supabase no Vercel. (${msg})`;
+  if (/invalid api key|no api key|apikey/i.test(msg)) return `A chave do Supabase configurada no Vercel não é válida. (${msg})`;
+  // mostra o detalhe técnico para se perceber a causa
+  return `Não foi possível continuar. Tente de novo. (${msg || 'erro desconhecido'})`;
 }
 
 export default function AuthForm({ modo, aviso }: { modo: Modo; aviso?: string }) {
