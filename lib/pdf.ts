@@ -439,9 +439,12 @@ async function completo(b: Base, d: DadosPDF) {
       p.drawImage(logo, { x: centro ? x - w / 2 : x, y: b.Y(top + h), width: w, height: h });
       return h;
     }
-    const sz = Math.min(28, maxH * 0.55);
-    if (centro) txtC(p, marca.main || e.nome || 'Empresa', x, top + sz, FB, sz, C.INK, sz * 0.12);
-    else txt(p, marca.main || e.nome || 'Empresa', x, top + sz, FB, sz, C.INK, sz * 0.12);
+    // sem logótipo: o nome em texto, reduzido até caber na largura disponível
+    const nome = marca.main || e.nome || 'Empresa';
+    let sz = Math.min(28, maxH * 0.55);
+    while (sz > 9 && FB.widthOfTextAtSize(nome, sz) + sz * 0.12 * (nome.length - 1) > maxW) sz -= 0.5;
+    if (centro) txtC(p, nome, x, top + sz, FB, sz, C.INK, sz * 0.12);
+    else txt(p, nome, x, top + sz, FB, sz, C.INK, sz * 0.12);
     if (marca.sub) (centro ? txtC : txt)(p, marca.sub.toUpperCase(), x, top + sz + 13, F, sz * 0.28, C.MUT, 1.4);
     return sz + (marca.sub ? 16 : 0);
   };

@@ -14,7 +14,8 @@ Orçamentos de obras a partir de fotos. O profissional fotografa a obra, respond
 | Esboço pela IA (Claude API, só no servidor) | `app/api/ia/route.ts`, `lib/ia.ts`, `lib/prompts.ts` |
 | Revisão das linhas: preços por confirmar, ajustes pela IA, IVA por linha | `components/editor/Revisao.tsx` |
 | PDF com a marca do profissional (gerado no telemóvel) e partilha direta (WhatsApp, email) | `lib/pdf.ts` |
-| Lista de orçamentos (rascunho / aprovado, total, custo de IA) | `app/orcamentos/page.tsx` |
+| Página de apresentação em `/` para quem não tem sessão: como funciona, páginas de uma proposta de exemplo, planos Pro e Premium, perguntas. Textos em `lib/site.ts` | `components/Landing.tsx`, `lib/site.ts`, `public/landing` |
+| Lista de orçamentos em cartões (rascunho / aprovado / enviado, total, custo de IA), resumo de 30 dias e primeiros passos | `app/orcamentos/page.tsx` |
 | Dois modelos de proposta: **completa** (capas, carta, resumo por fases, o que encontrámos, um capítulo por página, condições gerais, adjudicação com plano de pagamentos e IBAN) e **rápida** | `lib/pdf.ts`, `lib/prompts.ts` |
 | Letra Poppins nos PDF (licença SIL OFL, em `public/fontes`), com Helvetica de reserva | `lib/pdf.ts` |
 | Enviar por WhatsApp e email: mensagem preenchida e link seguro do PDF, válido durante a validade da proposta | `components/Editor.tsx` |

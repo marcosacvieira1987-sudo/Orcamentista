@@ -77,11 +77,11 @@ export default function AuthForm({ modo, aviso }: { modo: Modo; aviso?: string }
 
   return (
     <main className="auth">
-      <section className="intro"><span className="eyebrow">Prumo</span><h1>{titulo}</h1><p className="lead">{lead}</p></section>
+      <section className="intro"><Link href="/" className="auth-marca" aria-label="Página inicial do Prumo"><span className="auth-prumo" aria-hidden="true" />Prumo</Link><h1>{titulo}</h1><p className="lead">{lead}</p></section>
       <form onSubmit={submeter} noValidate>
         <section className="sheet">
           {modo === 'registar' ? (
-            <label className="f"><span className="lab">Nome da empresa</span><input value={empresa} onChange={(e) => setEmpresa(e.target.value)} autoComplete="organization" placeholder="Ex.: MACV Gestão de Obras" /></label>
+            <label className="f"><span className="lab">Nome da empresa</span><input value={empresa} onChange={(e) => setEmpresa(e.target.value)} autoComplete="organization" placeholder="Ex.: Silva & Filhos Remodelações" /></label>
           ) : null}
           {modo !== 'nova' ? (
             <label className="f"><span className="lab">Email</span><input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" inputMode="email" /></label>

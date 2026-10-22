@@ -202,7 +202,7 @@ export default function ConfigForm({ inicial, userId, email }: { inicial: Empres
         {ct('extras', 'Deslocação e entulho', 'Ex.: deslocação incluída; entulho a vazadouro incluído')}
         <div className="f"><label className="check"><input type="checkbox" checked={!!e.rodape} onChange={(ev) => set('rodape', ev.target.checked)} /> Mostrar “Preparado com {PRODUTO}” no rodapé do PDF</label></div>
       </section>
-      <section className="sheet" aria-labelledby="cfg-h-precos">
+      <section className="sheet" id="precario" aria-labelledby="cfg-h-precos">
         <div className="sh-h"><h2 id="cfg-h-precos">Preçário</h2><span className="lab">€ sem IVA</span></div>
         <p className="sh-f small muted">A IA usa estes preços tal como estão. Linhas sem preço não contam: nesses trabalhos ela estima e pede confirmação na revisão.</p>
         <div className="ptable">

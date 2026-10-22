@@ -447,3 +447,78 @@ a{color:inherit}
 @keyframes pulsar{50%{background:var(--pend-bg)}}
 @media (prefers-reduced-motion:reduce){.ditado-btn.a-ouvir{animation:none}}
 .ditado-prov{font-style:italic}
+
+/* ============ visual 2: mais arredondado, cartões, primeiros passos ============ */
+.card,.sheet,.callout{border-radius:12px}
+.btn{border-radius:10px}
+.btn.primary{box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 6px 16px color-mix(in srgb,var(--accent) 28%,transparent)}
+.btn.primary:disabled{box-shadow:none}
+.btn-novo{padding:0 22px;font-size:16px}
+#precario{scroll-margin-top:16px}
+
+/* topo fixo, translúcido */
+.top{position:sticky;top:0;z-index:15;margin:0 -20px;padding:12px 20px;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid color-mix(in srgb,var(--hair) 70%,transparent)}
+.prumo-tag{display:inline-flex;align-items:center;gap:6px;font:600 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.prumo-tag::before{content:"";width:8px;height:9px;background:var(--accent);clip-path:polygon(0 0,100% 0,50% 100%)}
+
+/* página de entrada */
+.auth-marca{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:18px;letter-spacing:.02em;text-decoration:none;color:var(--ink)}
+.auth-prumo{width:10px;height:16px;position:relative}
+.auth-prumo::before{content:"";position:absolute;left:4px;top:0;width:2px;height:7px;background:var(--muted)}
+.auth-prumo::after{content:"";position:absolute;left:0;top:6px;width:10px;height:10px;background:var(--accent);clip-path:polygon(0 0,100% 0,50% 100%)}
+
+/* primeiros passos */
+.passos-ini{display:flex;flex-direction:column;gap:12px;padding:20px;border-radius:16px;background:var(--surface);border:1px solid var(--hair);box-shadow:inset 0 3px 0 var(--accent)}
+.passos-ini h2{font-size:19px}
+.ini-barra{height:6px;border-radius:999px;background:var(--surface-2);border:1px solid var(--hair);overflow:hidden}
+.ini-barra i{display:block;height:100%;background:var(--accent);border-radius:inherit}
+.passos-ini ol{list-style:none;padding:0;margin:0;display:grid;gap:2px}
+.passos-ini li{display:flex;align-items:center;gap:12px;min-height:44px;margin:0;font-size:15px}
+.passos-ini li a{color:var(--accent);font-weight:600;text-underline-offset:3px}
+.passos-ini li.ok{color:var(--muted)}
+.passos-ini li.ok > span:last-child{text-decoration:line-through;text-decoration-color:var(--hair-2)}
+.ini-marca{flex:none;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--hair-2);font-size:14px;font-weight:700}
+.passos-ini li.ok .ini-marca{background:var(--ok);border-color:var(--ok);color:#fff}
+
+/* resumo de 30 dias */
+.resumo-30{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.resumo-30 > div{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:14px;background:var(--surface);border:1px solid var(--hair);min-width:0}
+.resumo-30 strong{font-size:clamp(20px,5.5vw,28px);line-height:1.05;letter-spacing:-.02em;font-weight:650;overflow-wrap:anywhere}
+.resumo-30 span{font-size:12px;line-height:1.3;color:var(--muted)}
+.resumo-30 > div:last-child strong{color:var(--accent)}
+
+/* cartões dos orçamentos */
+.cartoes{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.cartao{display:flex;flex-direction:column;gap:6px;padding:16px 16px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--hair);text-decoration:none;color:var(--ink);transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+.cartao:hover{border-color:var(--hair-2);box-shadow:var(--shadow);transform:translateY(-2px)}
+.cartao.enviado{box-shadow:inset 3px 0 0 var(--ok)}
+.cartao.enviado:hover{box-shadow:inset 3px 0 0 var(--ok),var(--shadow)}
+.c-topo{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.c-num{font:500 11px/1 var(--mono);color:var(--muted)}
+.c-tit{font-size:17px;line-height:1.25;font-weight:620;letter-spacing:-.01em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.c-sub{font-size:14px;color:var(--muted);min-height:1.4em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.c-pe{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:6px;padding-top:10px;border-top:1px solid var(--hair)}
+.c-data{font:400 12px/1.3 var(--mono);color:var(--muted)}
+.c-val{font-size:18px;letter-spacing:-.01em;white-space:nowrap}
+.estado{border-radius:999px;padding:0 10px}
+.estado.enviado{background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok)}
+.estado.aprovado{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);border:0}
+.vazio-grande{display:flex;flex-direction:column;align-items:center;gap:10px;padding:48px 20px;text-align:center;border:1.5px dashed var(--hair-2);border-radius:16px}
+.vazio-grande .vg-t{font-size:20px;font-weight:620}
+.vazio-grande form{margin-top:10px}
+
+/* botão flutuante de novo orçamento (telemóvel, quando o do topo já saiu do ecrã) */
+.fab-form{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:14}
+.fab{display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;border:0;border-radius:50%;background:var(--accent);color:var(--accent-ink);box-shadow:0 10px 28px color-mix(in srgb,var(--accent) 45%,transparent);cursor:pointer}
+.fab svg{width:26px;height:26px}
+@media (min-width:720px){
+  .fab-form{display:none}
+  .wrap-lista{max-width:1040px}
+  .cartoes{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (min-width:1000px){.cartoes{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:1000px){#app[data-step="revisao"] .top{margin:0 -32px;padding:12px 32px}}
+/* nomes de empresa longos: quebram entre palavras, nunca a meio */
+.wm-main{overflow-wrap:normal}
+.wm-main.long{font-size:16px;line-height:1.15}
+@media (max-width:420px){.top{gap:8px}.menu a,.menu button{padding:0 7px}}
