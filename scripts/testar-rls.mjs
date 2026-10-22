@@ -71,5 +71,15 @@ ok(/^MMGS-\d{4}-003$/.test(n3), `prefixo configurado e sequência mantida (${n3}
 const { error: usoErr } = await A.sb.from('uso_ia').insert({ acao: 'teste', orcamento_id: orcA.id, tokens_in: 1000, tokens_out: 500, custo_usd: 0.014 });
 ok(!usoErr, 'regista o custo da IA ligado ao orçamento');
 
+// PDFs enviados por link (migração 0003)
+const pdfBlob = new Blob(['%PDF-1.4 teste'], { type: 'application/pdf' });
+const { error: upP } = await A.sb.storage.from('propostas').upload(`${A.id}/${orcA.id}/proposta.pdf`, pdfBlob, { contentType: 'application/pdf', upsert: true });
+ok(!upP, 'A guarda o PDF da proposta na sua pasta');
+const { data: lnkB } = await B.sb.storage.from('propostas').createSignedUrl(`${A.id}/${orcA.id}/proposta.pdf`, 60);
+ok(!lnkB?.signedUrl, 'B não cria links para o PDF de A');
+const { data: lnkA } = await A.sb.storage.from('propostas').createSignedUrl(`${A.id}/${orcA.id}/proposta.pdf`, 60);
+const r = lnkA?.signedUrl ? await fetch(lnkA.signedUrl) : null;
+ok(!!r && r.ok, 'o link assinado de A abre o PDF sem sessão (é o que o cliente recebe)');
+
 console.log(falhas ? `\n${falhas} falha(s)` : '\nTudo isolado.');
 process.exit(falhas ? 1 : 0);

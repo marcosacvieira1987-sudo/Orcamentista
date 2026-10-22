@@ -17,6 +17,7 @@ Orçamentos de obras a partir de fotos. O profissional fotografa a obra, respond
 | Lista de orçamentos (rascunho / aprovado, total, custo de IA) | `app/orcamentos/page.tsx` |
 | Dois modelos de proposta: **completa** (capas, carta, resumo por fases, o que encontrámos, um capítulo por página, condições gerais, adjudicação com plano de pagamentos e IBAN) e **rápida** | `lib/pdf.ts`, `lib/prompts.ts` |
 | Letra Poppins nos PDF (licença SIL OFL, em `public/fontes`), com Helvetica de reserva | `lib/pdf.ts` |
+| Enviar por WhatsApp e email: mensagem preenchida e link seguro do PDF, válido durante a validade da proposta | `components/Editor.tsx` |
 | Duplicar orçamento (com cópia das fotos) | `app/orcamentos/[id]/duplicar/route.ts` |
 | Numeração sequencial por empresa (ex.: MMGS-2026-001) | `supabase/migrations/0002_proposta_completa.sql` |
 | RGPD: isolamento por conta, exportar dados, apagar conta | `supabase/migrations`, `app/api/conta`, `app/privacidade` |
@@ -42,6 +43,7 @@ A lógica, os prompts e o desenho vêm do protótipo `Orçamentista` (HTML únic
 2. Aplique as migrações por ordem, no *SQL Editor* (ou com `npx supabase link` + `npx supabase db push`):
    - `supabase/migrations/0001_inicial.sql` — tabelas, regras de acesso e ficheiros;
    - `supabase/migrations/0002_proposta_completa.sql` — proposta completa, numeração sequencial e custo da IA por orçamento.
+   - `supabase/migrations/0003_propostas_enviadas.sql` — PDFs enviados por link (WhatsApp e email).
 3. *Authentication → URL Configuration*:
    - **Site URL**: o endereço da app (ex.: `https://prumo.vercel.app`).
    - **Redirect URLs**: `https://prumo.vercel.app/auth/confirmar` (e `http://localhost:3000/auth/confirmar` para desenvolvimento).

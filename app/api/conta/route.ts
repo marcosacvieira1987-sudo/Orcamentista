@@ -6,7 +6,7 @@ export async function DELETE() {
   const u = await utilizadorAtual();
   if (!u) return NextResponse.json({ code: 'session_expired' }, { status: 401 });
   const admin = supabaseAdmin();
-  for (const bucket of ['fotos', 'logos']) {
+  for (const bucket of ['fotos', 'logos', 'propostas']) {
     // percorre a pasta do utilizador (fotos: <uid>/<orçamento>/<foto>.jpg; logos: <uid>/logo-*.png)
     const pastas = [u.id];
     while (pastas.length) {

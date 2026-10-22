@@ -50,6 +50,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
   const [gravacao, setGravacao] = useState<'guardado' | 'a guardar' | 'erro'>('guardado');
   const [toastMsg, setToastMsg] = useState<{ msg: string; desfazer?: () => void } | null>(null);
   const [pdfStatus, setPdfStatus] = useState('');
+  const [envio, setEnvio] = useState('');
   const ctl = useRef<AbortController | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -261,6 +262,65 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
   }
   const podePartilhar = typeof navigator !== 'undefined' && !!navigator.canShare && (() => { try { return navigator.canShare({ files: [new File([''], 'x.pdf', { type: 'application/pdf' })] }); } catch { return false; } })();
 
+  /* ---------- enviar ao cliente (WhatsApp, email) ---------- */
+  // Guarda o PDF (privado) e devolve um link assinado, válido durante a validade da proposta.
+  async function linkPDF(): Promise<string> {
+    const { bytes } = await gerarPDF(await dadosPDF());
+    const path = `${userId}/${orcId}/proposta.pdf`;
+    const { error } = await sb.storage.from('propostas').upload(path, new Blob([bytes as BlobPart], { type: 'application/pdf' }), { contentType: 'application/pdf', upsert: true });
+    if (error) throw error;
+    const dias = Math.min(90, Math.max(7, Math.round(num(S.meta.validade)) || 30));
+    const { data, error: e2 } = await sb.storage.from('propostas').createSignedUrl(path, dias * 86400, { download: nomeFicheiro(empresa.nome, S.meta.numero) });
+    if (e2 || !data?.signedUrl) throw e2 || new Error('sem link');
+    return data.signedUrl;
+  }
+  function textoEnvio(link: string) {
+    const t = totais(S.orc, empresa);
+    const titulo = (S.orc?.titulo || descObra(S.pedido.tipo)).toLowerCase();
+    const nome = (S.pedido.dono || '').trim().split(/\s+/)[0];
+    const base = S.mensagem.trim() || [
+      `Bom dia${nome ? ' ' + nome : ''},`,
+      `Segue a nossa proposta n.º ${S.meta.numero} para ${titulo}${S.pedido.localidade ? ' (' + S.pedido.localidade + ')' : ''}, no valor global de ${fmtEUR(t.semIva)} + IVA (${fmtEUR(t.total)} com IVA).`,
+      'Fico ao dispor para qualquer esclarecimento e para marcar a visita técnica.',
+      `Com os melhores cumprimentos,\n${empresa.assinante || empresa.nome}${empresa.assinante && empresa.nome ? '\n' + empresa.nome : ''}${empresa.telefone ? '\n' + empresa.telefone : ''}`
+    ].join('\n\n');
+    return `${base}\n\nProposta em PDF: ${link}`;
+  }
+  const telefoneWa = (t: string) => {
+    let n = String(t || '').replace(/[^\d+]/g, '').replace(/^\+/, '').replace(/^00/, '');
+    if (/^9\d{8}$/.test(n) || /^2\d{8}$/.test(n)) n = '351' + n; // números portugueses sem indicativo
+    return n;
+  };
+  async function enviar(via: 'whatsapp' | 'email') {
+    if (!S.orc) return;
+    // a janela abre já, dentro do clique (senão o browser bloqueia); o endereço chega depois
+    const janela = via === 'whatsapp' ? window.open('', '_blank') : null;
+    setEnvio('A preparar o envio…');
+    try {
+      const texto = textoEnvio(await linkPDF());
+      if (via === 'whatsapp') {
+        const url = `https://wa.me/${telefoneWa(S.pedido.telefone || '')}?text=${encodeURIComponent(texto)}`;
+        if (janela) janela.location.href = url; else window.location.href = url;
+      } else {
+        const assunto = `Proposta n.º ${S.meta.numero} - ${S.orc.titulo || maiuscula(descObra(S.pedido.tipo))} - ${empresa.nome}`;
+        window.location.href = `mailto:${encodeURIComponent(S.pedido.email || '')}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(texto)}`;
+      }
+      upd((d) => { d.meta.enviado = `${new Date().toISOString()}|${via}`; });
+      setEnvio(via === 'whatsapp' ? 'WhatsApp aberto com a mensagem e o link do PDF: confirme e envie.' : 'Email aberto com a mensagem e o link do PDF: confirme e envie.');
+    } catch (e) {
+      console.error('enviar', e);
+      janela?.close();
+      const semBucket = /bucket|not found/i.test(String((e as Error)?.message || ''));
+      setEnvio(semBucket ? 'Falta atualizar a base de dados (migração 0003 no Supabase) para enviar por link. Entretanto use “Partilhar PDF” ou “Descarregar PDF”.' : 'Não foi possível preparar o envio. Tente de novo.');
+    }
+  }
+  const enviadoTxt = (() => {
+    const [quando, via] = String(S.meta.enviado || '').split('|');
+    if (!quando) return '';
+    const d = new Date(quando);
+    return `Enviada a ${fmtData(d)} às ${pad(d.getHours())}:${pad(d.getMinutes())} por ${via === 'email' ? 'email' : 'WhatsApp'}.`;
+  })();
+
   async function copiarMensagem() {
     if (!S.mensagem.trim()) { toast('Ainda não há mensagem para copiar.'); return; }
     try { await navigator.clipboard.writeText(S.mensagem); toast('Mensagem copiada.'); }
@@ -271,6 +331,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
     if (!window.confirm('Apagar este orçamento e as fotos? Não dá para desfazer.')) return;
     const paths = S.fotos.map((f) => f.path);
     if (paths.length) await sb.storage.from('fotos').remove(paths);
+    await sb.storage.from('propostas').remove([`${userId}/${orcId}/proposta.pdf`]);
     await sb.from('orcamentos').delete().eq('id', orcId);
     router.replace('/orcamentos'); router.refresh();
   }
@@ -317,6 +378,10 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
           <div className="f-grid">
             <label className="f"><span className="lab">Localidade</span><input value={p.localidade} placeholder="Ex.: Lisboa, Arroios" autoComplete="off" onChange={(e) => upd((d) => { d.pedido.localidade = e.target.value; })} /></label>
             <label className="f"><span className="lab">Dono de obra</span><input value={p.dono} placeholder="Nome, aparece na proposta" autoComplete="off" onChange={(e) => upd((d) => { d.pedido.dono = e.target.value; })} /></label>
+          </div>
+          <div className="f-grid">
+            <label className="f"><span className="lab">Telemóvel do cliente</span><input type="tel" inputMode="tel" value={p.telefone || ''} placeholder="Para enviar por WhatsApp" autoComplete="off" onChange={(e) => upd((d) => { d.pedido.telefone = e.target.value; })} /></label>
+            <label className="f"><span className="lab">Email do cliente</span><input type="email" inputMode="email" value={p.email || ''} placeholder="Para enviar por email" autoComplete="off" onChange={(e) => upd((d) => { d.pedido.email = e.target.value; })} /></label>
           </div>
           <div className="f"><span className="lab" id="lab-modelo">Proposta</span>
             <div className="chips" role="radiogroup" aria-labelledby="lab-modelo">
@@ -470,10 +535,23 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
         {intro('pdf', 'Proposta pronta', '', <div className="tot-line"><span className="lab">Total com IVA</span><span className="tot-mid num">{fmtEUR(t.total)}</span></div>)}
         <figure className="preview">{capaMini()}<figcaption className="mono small muted">{nomeFicheiro(empresa.nome, S.meta.numero)}</figcaption></figure>
         <section className="pdf-acts">
-          <button className="btn primary lg" onClick={() => pdf(false)}>{ICON.baixar} Descarregar PDF</button>
-          {podePartilhar ? <button className="btn lg" onClick={() => pdf(true)}>{ICON.partilhar} Partilhar PDF</button> : null}
+          <button className="btn lg" onClick={() => pdf(false)}>{ICON.baixar} Descarregar PDF</button>
+          {podePartilhar ? <button className="btn lg" onClick={() => pdf(true)}>{ICON.partilhar} Partilhar PDF (ficheiro)</button> : null}
           <p className="small muted" role="status">{pdfStatus}</p>
           {custoIa !== null ? <p className="small muted">Custo de IA deste orçamento: {custoIa.toFixed(2).replace('.', ',')} US$</p> : null}
+        </section>
+        <section className="sheet enviar" aria-labelledby="lab-env">
+          <div className="sh-h"><h2 id="lab-env">Enviar ao cliente</h2>{enviadoTxt ? <span className="small ok-msg">{enviadoTxt}</span> : null}</div>
+          <div className="f-grid">
+            <label className="f"><span className="lab">Telemóvel</span><input type="tel" inputMode="tel" value={S.pedido.telefone || ''} placeholder="Ex.: 912 345 678" onChange={(e) => upd((d) => { d.pedido.telefone = e.target.value; })} /></label>
+            <label className="f"><span className="lab">Email</span><input type="email" inputMode="email" value={S.pedido.email || ''} placeholder="cliente@exemplo.pt" onChange={(e) => upd((d) => { d.pedido.email = e.target.value; })} /></label>
+          </div>
+          <div className="sh-f row">
+            <button className="btn primary grow" onClick={() => enviar('whatsapp')}>{ICON.whatsapp} Enviar por WhatsApp</button>
+            <button className="btn grow" onClick={() => enviar('email')}>{ICON.email} Enviar por email</button>
+          </div>
+          {envio ? <p className={'sh-f small ' + (/Falta|Não foi/.test(envio) ? 'erro' : 'muted')} role="status">{envio}</p> : null}
+          <p className="sh-f small muted">Abre a conversa ou o email já com a mensagem abaixo e um link seguro para o PDF, válido durante a validade da proposta. Só envia quando confirmar na aplicação.</p>
         </section>
         <section className="sheet">
           <div className="sh-h"><span className="lab" id="lab-msg">Mensagem</span><button className="link" onClick={escreverMensagem}>{S.mensagem ? 'Escrever outra' : 'Escrever com a IA'}</button></div>

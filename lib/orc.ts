@@ -19,7 +19,7 @@ export type Modelo = 'rapido' | 'completo';
 export type MostrarPrecos = 'capitulo' | 'detalhado';
 export type ItemPreco = { descricao: string; unidade: string; preco: number | null };
 
-export type Pedido = { texto: string; tipo: string; localidade: string; dono: string; notas: string };
+export type Pedido = { texto: string; tipo: string; localidade: string; dono: string; notas: string; telefone?: string; email?: string };
 export type Foto = { id: string; path: string; nome: string };
 export type Leitura = {
   fotos: { n: number; divisao: string; descricao: string }[];
@@ -45,7 +45,7 @@ export type Orc = {
   // proposta completa
   titulo: string; apresentacao: string; encontramos: string; fotos_encontramos: number[]; fases: Fase[];
 };
-export type Meta = { numero: string; data: string; validade: number | ''; prazo: string };
+export type Meta = { numero: string; data: string; validade: number | ''; prazo: string; enviado?: string };
 export type Passo = 'pedido' | 'leitura' | 'perguntas' | 'medidas' | 'revisao' | 'pdf';
 
 export type Estado = {
