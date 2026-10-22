@@ -10,7 +10,7 @@ export default async function Orcamentos() {
   const { sb } = await exigirUtilizador();
   const [{ data: emp }, { data: lista }, { data: usos }] = await Promise.all([
     sb.from('empresas').select('nome, precos').maybeSingle(),
-    sb.from('orcamentos').select('id, estado, numero, tipo, localidade, dono, total, atualizado_em').order('atualizado_em', { ascending: false }).limit(200),
+    sb.from('orcamentos').select('id, estado, numero, tipo, localidade, dono, total, atualizado_em, titulo:dados->orc->>titulo').order('atualizado_em', { ascending: false }).limit(200),
     sb.from('uso_ia').select('orcamento_id, custo_usd').not('orcamento_id', 'is', null)
   ]);
   // custo de IA por orçamento (vazio enquanto a migração 0002 não estiver aplicada)
@@ -36,7 +36,7 @@ export default async function Orcamentos() {
           {(lista || []).length === 0 ? <p className="vazio">Ainda não tem orçamentos. Carregue em “Novo orçamento”.</p> : null}
           {(lista || []).map((o) => (
             <Link key={o.id} href={`/orcamentos/${o.id}`} className="item">
-              <span className="t1">{maiuscula(descObra(o.tipo))}{o.dono ? ` · ${o.dono}` : ''}</span>
+              <span className="t1">{o.titulo || maiuscula(descObra(o.tipo))}{o.dono ? ` · ${o.dono}` : ''}</span>
               <span className="t2">{[o.numero ? 'N.º ' + o.numero : '', o.localidade, fmtData(new Date(o.atualizado_em)), custo.get(o.id) ? `IA ${custo.get(o.id)!.toFixed(2).replace('.', ',')} US$` : ''].filter(Boolean).join(' · ')}</span>
               <span className="val">
                 <span className={'estado ' + o.estado}>{o.estado === 'aprovado' ? 'Aprovado' : 'Rascunho'}</span>

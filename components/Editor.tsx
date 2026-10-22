@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { bytesDe, carregarFoto, urlsAssinadas } from '@/lib/fotos';
 import { completarOrc, descObra, LEITURA_VAZIA, juntarLeituras, linhas, numeroProposta, partesMarca, textoSeguro, TIPOS_OBRA, totais, validadePadrao, type Empresa, type Estado, type Leitura, type Orc, type Passo, type Pergunta } from '@/lib/orc';
-import { descarregar, gerarPDF, nomeFicheiro } from '@/lib/pdf';
+import { carregarFontes, descarregar, gerarPDF, nomeFicheiro } from '@/lib/pdf';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { deIso, fmtData, fmtEUR, isoHoje, maiuscula, norm, num, pad, uid, un } from '@/lib/util';
 import Revisao from './editor/Revisao';
@@ -233,11 +233,12 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
 
   /* ---------- PDF ---------- */
   async function dadosPDF() {
-    const [logo, ...fotos] = await Promise.all([
+    const [fontes, logo, ...fotos] = await Promise.all([
+      carregarFontes(),
       empresa.logo_path ? bytesDe(sb, 'logos', empresa.logo_path) : Promise.resolve(null),
       ...S.fotos.map((f) => bytesDe(sb, 'fotos', f.path))
     ]);
-    return { empresa, logo, pedido: S.pedido, meta: S.meta, orc: S.orc!, totais: totais(S.orc, empresa), fotos, leitura: S.leitura, exemplo: false, modelo: S.modelo, mostrarPrecos: S.mostrar_precos };
+    return { empresa, logo, pedido: S.pedido, meta: S.meta, orc: S.orc!, totais: totais(S.orc, empresa), fotos, leitura: S.leitura, exemplo: false, modelo: S.modelo, mostrarPrecos: S.mostrar_precos, fontes: fontes as Awaited<ReturnType<typeof carregarFontes>> };
   }
   async function pdf(partilhar: boolean) {
     if (!S.orc) return;
@@ -340,7 +341,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
           <button type="button" className="btn dashed wide" onClick={() => fileRef.current?.click()}>{ICON.mais} Juntar fotos</button>
           <p className="small muted">Cada divisão vista da porta, cada parede de frente, os pormenores (humidade, fissuras, quadro elétrico) e uma foto do croqui com as cotas.</p>
         </section>
-        <p><button className="link danger" onClick={apagarOrcamento}>Apagar este orçamento</button></p>
+        <div className="row"><form action={`/orcamentos/${orcId}/duplicar`} method="post"><button className="link">Duplicar este orçamento</button></form><button className="link danger" onClick={apagarOrcamento}>Apagar este orçamento</button></div>
         <div className="actions">
           <button className="btn lg" onClick={semFotos} disabled={!prontas}>Continuar sem fotos</button>
           <button className="btn primary lg grow" onClick={lerFotos} disabled={!S.fotos.length || !prontas}>Ler as fotos {ICON.seta}</button>
@@ -482,6 +483,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
         {S.orc!.a_confirmar.length ? <section className="card ms"><span className="lab">Confirmar na visita</span><ul>{S.orc!.a_confirmar.map((x, i) => <li key={i}>{x}</li>)}</ul></section> : null}
         <div className="actions"><button className="btn lg" onClick={() => { upd((d) => { d.aprovado = false; }); go('revisao'); }}>Voltar à revisão</button>
           <form action="/orcamentos/novo" method="post" className="grow" style={{ display: 'flex' }}><button className="btn lg grow">Novo orçamento</button></form></div>
+        <div className="row small muted"><form action={`/orcamentos/${orcId}/duplicar`} method="post"><button className="link">Duplicar este orçamento</button></form><span>para usar como base de outra proposta.</span></div>
       </>
     );
   }

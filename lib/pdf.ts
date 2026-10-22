@@ -1,9 +1,10 @@
 // Proposta em PDF com a marca do profissional (gerada no browser).
 // Dois modelos: "rápido" (herdado do protótipo) e "completo" (estrutura da proposta MMGS:
 // capas, apresentação, resumo por fases, o que encontrámos, um capítulo por página, condições e adjudicação).
+import fontkit from '@pdf-lib/fontkit';
 import { PDFDocument, StandardFonts, clip, degrees, endPath, popGraphicsState, pushGraphicsState, rectangle, rgb, setCharacterSpacing, type PDFFont, type PDFImage, type PDFPage, type RGB } from 'pdf-lib';
 import type { Capitulo, Empresa, Leitura, Meta, Modelo, MostrarPrecos, Orc, Pedido, Totais } from './orc';
-import { descObra, partesMarca, planoPagamentos, resumoFases, subtotal, textoSeguro, totalLinha, valorCapitulo } from './orc';
+import { descObra, partesMarca, planoPagamentos, resumoFases, semIva, subtotal, textoSeguro, totalLinha, valorCapitulo } from './orc';
 import { PRODUTO } from './marca';
 import { deIso, fmtData, fmtEUR, fmtN, isoHoje, maiuscula, num, pad, un } from './util';
 
@@ -12,7 +13,17 @@ export type DadosPDF = {
   empresa: Empresa; logo: ImagemBytes | null; pedido: Pick<Pedido, 'tipo' | 'localidade' | 'dono'>;
   meta: Meta; orc: Orc; totais: Totais; fotos: (ImagemBytes | null)[]; leitura: Leitura | null; exemplo: boolean;
   modelo?: Modelo; mostrarPrecos?: MostrarPrecos;
+  fontes?: Fontes | null;
 };
+// Poppins (a letra da proposta MMGS); sem ela o PDF usa Helvetica.
+export type Fontes = { regular: Uint8Array; bold: Uint8Array; italic: Uint8Array };
+export async function carregarFontes(base = '/fontes'): Promise<Fontes | null> {
+  try {
+    const ler = async (f: string) => { const r = await fetch(`${base}/${f}`); if (!r.ok) throw new Error(f); return new Uint8Array(await r.arrayBuffer()); };
+    const [regular, bold, italic] = await Promise.all([ler('poppins-400.woff'), ler('poppins-700.woff'), ler('poppins-400-italic.woff')]);
+    return { regular, bold, italic };
+  } catch { return null; }
+}
 
 /* ============ texto ============ */
 const WIN = new Set<string>();
@@ -58,18 +69,23 @@ function quebrarEquilibrado(texto: string, font: PDFFont, size: number, maxW: nu
   return quebrar(texto, font, size, hi);
 }
 // Texto com **negrito**: devolve linhas de palavras marcadas.
-type Palavra = { t: string; b: boolean };
+// "colada": sem espaço antes (ex.: a vírgula logo a seguir a um negrito).
+type Palavra = { t: string; b: boolean; colada?: boolean };
 function quebrarRico(texto: string, F: PDFFont, FB: PDFFont, size: number, largura: number): Palavra[][] {
   const maxW = largura * FOLGA;
   const palavras: Palavra[] = [];
-  String(texto || '').split('**').forEach((parte, i) => pdfSafe(parte).split(/\s+/).filter(Boolean).forEach((t) => palavras.push({ t, b: i % 2 === 1 })));
+  const partes = String(texto || '').split('**');
+  partes.forEach((parte, i) => {
+    const colaInicio = i > 0 && !/^\s/.test(parte) && !/\s$/.test(partes[i - 1]);
+    pdfSafe(parte).split(/\s+/).filter(Boolean).forEach((t, j) => palavras.push({ t, b: i % 2 === 1, colada: j === 0 && colaInicio && palavras.length > 0 }));
+  });
   const esp = F.widthOfTextAtSize(' ', size);
   const larg = (p: Palavra) => (p.b ? FB : F).widthOfTextAtSize(p.t, size);
   const linhas: Palavra[][] = []; let cur: Palavra[] = []; let w = 0;
   for (const p of palavras) {
-    const lp = larg(p);
-    if (cur.length && w + esp + lp > maxW) { linhas.push(cur); cur = []; w = 0; }
-    w += (cur.length ? esp : 0) + lp; cur.push(p);
+    const lp = larg(p), e = cur.length && !p.colada ? esp : 0;
+    if (cur.length && !p.colada && w + e + lp > maxW) { linhas.push(cur); cur = []; w = 0; }
+    w += (cur.length && !p.colada ? esp : 0) + lp; cur.push(p);
   }
   if (cur.length) linhas.push(cur);
   return linhas;
@@ -83,14 +99,21 @@ const W = 595.28, H = 841.89, M = 54;
 
 async function preparar(d: DadosPDF) {
   const pdf = await PDFDocument.create();
-  const F = await pdf.embedFont(StandardFonts.Helvetica);
-  const FB = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const FI = await pdf.embedFont(StandardFonts.HelveticaOblique);
+  let F: PDFFont, FB: PDFFont, FI: PDFFont;
+  try {
+    if (!d.fontes) throw new Error('sem fontes');
+    pdf.registerFontkit(fontkit);
+    [F, FB, FI] = await Promise.all([pdf.embedFont(d.fontes.regular, { subset: true }), pdf.embedFont(d.fontes.bold, { subset: true }), pdf.embedFont(d.fontes.italic, { subset: true })]);
+  } catch {
+    [F, FB, FI] = await Promise.all([pdf.embedFont(StandardFonts.Helvetica), pdf.embedFont(StandardFonts.HelveticaBold), pdf.embedFont(StandardFonts.HelveticaOblique)]);
+  }
   const cor = (h: string, def = '101315') => { const m = /^#?([0-9a-f]{6})$/i.exec(String(h || '').trim()); const v = m ? m[1] : def; return [parseInt(v.slice(0, 2), 16) / 255, parseInt(v.slice(2, 4), 16) / 255, parseInt(v.slice(4, 6), 16) / 255]; };
   const [br, bg, bb] = cor(d.empresa.cor, '1F3F8F');
   const tom = (k: number) => rgb(br + (1 - br) * k, bg + (1 - bg) * k, bb + (1 - bb) * k);
+  // cor da marca muito escura (ex.: preto): sobre fundo escuro usa-se um tom claro, para se ler
+  const escura = 0.2126 * br + 0.7152 * bg + 0.0722 * bb < 0.3;
   const C = {
-    BR: rgb(br, bg, bb), BR_CLARO: tom(0.9), BR_FUNDO: tom(0.96),
+    BR: rgb(br, bg, bb), BR_CLARO: tom(0.9), BR_FUNDO: tom(0.96), BR_SOBRE_ESCURO: escura ? tom(0.7) : rgb(br, bg, bb),
     INK: rgb(0.063, 0.075, 0.082), MUT: rgb(0.357, 0.384, 0.408), HAIR: rgb(0.867, 0.878, 0.859), PAPEL: rgb(0.949, 0.953, 0.941), CRIT: rgb(0.702, 0.149, 0.118), BRANCO: rgb(1, 1, 1)
   };
   const e = d.empresa;
@@ -138,7 +161,10 @@ async function preparar(d: DadosPDF) {
   };
   const linhaRica = (p: PDFPage, ps: Palavra[], x: number, top: number, sz: number, c: RGB) => {
     const esp = F.widthOfTextAtSize(' ', sz); let xx = x;
-    for (const w of ps) { const f = w.b ? FB : F; p.drawText(w.t, { x: xx, y: Y(top), size: sz, font: f, color: c }); xx += f.widthOfTextAtSize(w.t, sz) + esp; }
+    ps.forEach((w, i) => {
+      if (i > 0 && !w.colada) xx += esp;
+      const f = w.b ? FB : F; p.drawText(w.t, { x: xx, y: Y(top), size: sz, font: f, color: c }); xx += f.widthOfTextAtSize(w.t, sz);
+    });
   };
 
   const embed = async (im: ImagemBytes | null) => {
@@ -336,14 +362,14 @@ async function rapido(b: Base, d: DadosPDF) {
   caixaTotais();
 
   // 04 Não incluído
-  const naoIncl = d.orc.nao_incluido.length ? d.orc.nao_incluido : String(e.nunca_inclui || '').split(/[;\n]+/).map((x) => x.trim()).filter(Boolean);
+  const naoIncl = semIva(d.orc.nao_incluido.length ? d.orc.nao_incluido : String(e.nunca_inclui || '').split(/[;\n]+/).map((x) => x.trim()).filter(Boolean));
   let n = 4;
   if (naoIncl.length) { titulo(n++, 'Não incluído'); marcadores(naoIncl); }
 
   // 05 Pressupostos e pontos a confirmar
   if (d.orc.pressupostos.length || d.orc.a_confirmar.length) {
     titulo(n++, 'Pressupostos e pontos a confirmar');
-    if (d.orc.pressupostos.length) { subtitulo('Pressupostos'); marcadores(d.orc.pressupostos); }
+    if (d.orc.pressupostos.length) { subtitulo('Pressupostos'); marcadores(semIva(d.orc.pressupostos)); }
     if (d.orc.a_confirmar.length) { subtitulo('A confirmar na visita técnica'); marcadores(d.orc.a_confirmar); }
   }
 
@@ -616,7 +642,25 @@ async function completo(b: Base, d: DadosPDF) {
     s.y += 10;
     if (c.descricao) paragrafo(c.descricao, { rico: true, depois: 10 });
     const fc = c.fotos.filter(existe).slice(0, 2);
-    if (fc.length) {
+    if (fc.length === 1 && c.estado.length) {
+      // uma foto: à esquerda, com o estado atual ao lado (como na proposta MMGS)
+      const gap = 20, cw = (W - 2 * M - gap) / 2, ch = 150;
+      precisa(ch + 40);
+      const topo = s.y;
+      fotoCoberta(s.page, fotos[fc[0] - 1]!, M, topo, cw, ch);
+      const fimLegenda = legendaFoto(s.page, fc[0], M, topo + ch + 12, cw, 2);
+      const xe = M + cw + gap, we = W - M - xe;
+      let ye = topo + 4;
+      txt(s.page, 'Estado atual', xe, ye + 10, FB, 10, C.INK); ye += 22;
+      for (const it of c.estado) {
+        const ls = quebrarRico(it, F, FB, 9, we - 14);
+        if (ye + ls.length * 12.5 > topo + ch + 40) break;
+        b.tick(s.page, xe + 4, ye + 6, 2.4, C.BR, 0.9);
+        ls.forEach((ln) => { b.linhaRica(s.page, ln, xe + 14, ye + 9, 9, C.INK); ye += 12.5; });
+        ye += 4;
+      }
+      s.y = Math.max(fimLegenda, ye) + 16;
+    } else if (fc.length) {
       const gap = 16, cw = (W - 2 * M - gap) / 2, ch = 150;
       precisa(ch + 40);
       fc.forEach((n, j) => {
@@ -626,11 +670,12 @@ async function completo(b: Base, d: DadosPDF) {
       });
       s.y += ch + 36;
     }
-    if (c.estado.length) { subtitulo('Estado atual'); marcadores(c.estado); }
+    if (c.estado.length && !(fc.length === 1)) { subtitulo('Estado atual'); marcadores(c.estado); }
     subtitulo('Trabalhos incluídos');
     tabelaLinhas(b, k, [c], { precos: detalhado, ivaColuna: detalhado && T.ivas.length > 1, subtotais: false, numeroCap: ci + 1 });
     caixaValor('Valor global do capítulo', [variasFases ? `Fase ${c.fase || 1}` : '', c.prazo ? `prazo indicativo: ${c.prazo}` : ''].filter(Boolean).join(' · '), vg(valorCapitulo(c, o, e)));
-    if (c.nao_incluido.length) paragrafo(`**Não incluído:** ${c.nao_incluido.join('; ').replace(/\.$/, '')}.`, { rico: true, size: 8.5, lh: 12.5 });
+    const naoCap = semIva(c.nao_incluido);
+    if (naoCap.length) paragrafo(`**Não incluído:** ${naoCap.join('; ').replace(/\.$/, '')}.`, { rico: true, size: 8.5, lh: 12.5 });
   });
 
   // 04 Condições gerais
@@ -641,8 +686,8 @@ async function completo(b: Base, d: DadosPDF) {
     const h = Math.max(120, 78 + gls.length * 12);
     precisa(h + 16);
     if (e.garantia) {
-      caixa(s.page, M, s.y, cw, h, { fundo: C.INK, topo: C.BR });
-      rotulo(s.page, 'Garantia', M + 18, s.y + 22, C.BR, true);
+      caixa(s.page, M, s.y, cw, h, { fundo: C.INK, topo: C.BR_SOBRE_ESCURO });
+      rotulo(s.page, 'Garantia', M + 18, s.y + 22, C.BR_SOBRE_ESCURO, true);
       txt(s.page, e.garantia, M + 18, s.y + 50, FB, 20, C.BRANCO, -0.3);
       gls.forEach((ln, i) => txt(s.page, ln, M + 18, s.y + 72 + i * 12, F, 8.5, C.BRANCO));
     }
@@ -655,16 +700,16 @@ async function completo(b: Base, d: DadosPDF) {
     }
     s.y += h + 20;
   }
-  const naoGeral = o.nao_incluido.length ? o.nao_incluido : String(e.nunca_inclui || '').split(/[;\n]+/).map((x) => x.trim()).filter(Boolean);
+  const naoGeral = semIva(o.nao_incluido.length ? o.nao_incluido : String(e.nunca_inclui || '').split(/[;\n]+/).map((x) => x.trim()).filter(Boolean));
   tabelaCondicoes(b, k, [
     ['Valores', `Valores sem IVA; acresce IVA à taxa legal em vigor${T.ivas.length ? ` (${T.ivas.map((x) => `${fmtN(x.taxa, 0)}%`).join(' e ')})` : ''}. Total com IVA: ${fmtEUR(T.total)}. O valor global da proposta é a soma dos valores globais dos ${o.capitulos.length} capítulos.`],
     ['Adjudicação', variasFases ? 'A proposta é adjudicada na totalidade, pelo valor global. Os capítulos são interligados e não são adjudicáveis em separado.' : 'A proposta é adjudicada na totalidade, pelo valor global.'],
     ['Fases', variasFases ? `Execução em ${fases.length} fases, pela ordem indicada: ${fases.map((f) => `Fase ${f.n}${f.titulo ? ' — ' + f.titulo.toLowerCase() : ''} (capítulo${f.capitulos.length > 1 ? 's' : ''} ${f.capitulos.join(', ')})`).join('; ')}.` : ''],
     ['Pagamento', textoPagamento(d, false)],
     ['Prazos', variasFases ? 'Indicados em cada capítulo, a contar do início de cada fase. Nos trabalhos exteriores dependem das condições meteorológicas.' : d.meta.prazo || e.prazo || 'Indicados em cada capítulo.'],
-    ['Execução', d.orc.pressupostos.join('; ')],
-    ['Não incluído', naoGeral.join('; ')],
-    ['A confirmar', d.orc.a_confirmar.join('; ')],
+    ['Execução', semIva(d.orc.pressupostos)],
+    ['Não incluído', naoGeral],
+    ['A confirmar', d.orc.a_confirmar],
     ['Deslocação e entulho', e.extras || ''],
     ['Trabalhos extra', 'Trabalhos não descritos ou imprevistos são orçamentados à parte e só avançam depois de aprovados.'],
     ['Validade', `${val} dias, até ${fmtData(fim)}.`],
@@ -835,17 +880,26 @@ function grelhaFotos(b: Base, k: ReturnType<typeof corrido>, nums: number[], ch 
   }
 }
 
-function tabelaCondicoes(b: Base, k: ReturnType<typeof corrido>, linhas: [string, string][]) {
-  const { F, C, txt, traco, rotulo } = b;
+// Linhas "rótulo | texto". Listas: um item por linha, com marcador; as listas longas continuam na página seguinte.
+function tabelaCondicoes(b: Base, k: ReturnType<typeof corrido>, linhas: [string, string | string[]][]) {
+  const { F, C, txt, traco, rotulo, tick } = b;
   const { s, novaPagina, FUNDO } = k;
+  const lh = 13.3, wv = W - 2 * M - 130;
   traco(s.page, M, s.y, W - M, s.y, 0.5, C.HAIR);
-  linhas.filter((r) => String(r[1]).trim()).forEach(([kk, v]) => {
-    const ls = quebrar(v, F, 9.5, W - 2 * M - 130);
-    const h = ls.length * 13.3 + 14;
-    if (s.y + h > FUNDO) { novaPagina(); traco(s.page, M, s.y, W - M, s.y, 0.5, C.HAIR); }
+  linhas.filter((r) => (Array.isArray(r[1]) ? r[1].length : String(r[1]).trim())).forEach(([kk, v]) => {
+    const itens = Array.isArray(v) ? v.map((x) => quebrar(x, F, 9.5, wv - 14)) : [quebrar(v, F, 9.5, wv)];
+    const lista = Array.isArray(v);
+    const primeira = itens[0].length * lh + 14;
+    if (s.y + Math.min(primeira, 80) > FUNDO) { novaPagina(); traco(s.page, M, s.y, W - M, s.y, 0.5, C.HAIR); }
     rotulo(s.page, kk, M, s.y + 17);
-    ls.forEach((ln, i) => txt(s.page, ln, M + 130, s.y + 17 + i * 13.3, F, 9.5, C.INK));
-    s.y += h;
+    let y = s.y + 17;
+    itens.forEach((ls) => {
+      if (y + ls.length * lh > FUNDO) { novaPagina(); y = s.y + 17; rotulo(s.page, `${kk} (cont.)`, M, y); }
+      if (lista) tick(s.page, M + 134, y - 3.5, 2.4, C.BR, 0.9);
+      ls.forEach((ln, i) => txt(s.page, ln, M + 130 + (lista ? 14 : 0), y + i * lh, F, 9.5, C.INK));
+      y += ls.length * lh + (lista ? 4 : 0);
+    });
+    s.y = y - 17 + (lista ? 10 : 14);
     traco(s.page, M, s.y, W - M, s.y, 0.5, C.HAIR);
   });
 }
@@ -860,7 +914,9 @@ function textoPagamento(d: DadosPDF, comIva: boolean) {
   const f = comIva && d.totais.semIva ? d.totais.total / d.totais.semIva : 1;
   const partes = plano.map((p) => `${p.momento.toLowerCase().replace(/^adjudicação$/, 'na adjudicação').replace(/^início/, 'no início').replace(/^conclusão/, 'na conclusão')}: ${p.referencia.split(' do ')[0]} (${fmtEUR(p.valor * f)})`);
   const plan = partes.length ? `${maiuscula(partes.join('; '))}${comIva ? ', valores com IVA' : ', valores sem IVA'}.` : '';
-  return [plan, d.empresa.pagamento].filter(Boolean).join(' ');
+  // notas só com números (ex.: "40, 40, 20") repetem o plano calculado: não entram
+  const notas = /^[\d\s,.;%/+e-]*$/i.test(d.empresa.pagamento || '') ? '' : d.empresa.pagamento;
+  return [plan, notas].filter(Boolean).join(' ');
 }
 
 export function nomeFicheiro(nomeEmpresa: string, numero: string, exemplo = false) {

@@ -7,7 +7,7 @@ import { dadosExemplo } from '@/lib/exemplo';
 import { bytesDe, prepararLogo, urlsAssinadas } from '@/lib/fotos';
 import { PRODUTO } from '@/lib/marca';
 import { LISTA_BASE, type Empresa } from '@/lib/orc';
-import { descarregar, gerarPDF, nomeFicheiro } from '@/lib/pdf';
+import { carregarFontes, descarregar, gerarPDF, nomeFicheiro } from '@/lib/pdf';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { fmtPreco, num, un } from '@/lib/util';
 import { ICON } from './editor/pecas';
@@ -114,7 +114,7 @@ export default function ConfigForm({ inicial, userId, email }: { inicial: Empres
     try {
       const emp = empresaFinal();
       const logo = logoPath ? await bytesDe(sb, 'logos', logoPath) : null;
-      const { bytes } = await gerarPDF(dadosExemplo(emp, logo));
+      const { bytes } = await gerarPDF({ ...dadosExemplo(emp, logo), fontes: await carregarFontes() });
       descarregar(bytes, nomeFicheiro(emp.nome, '', true));
       setEstado('PDF de exemplo descarregado.');
     } catch (err) { console.error(err); setEstado('Não foi possível gerar o PDF de exemplo.'); }

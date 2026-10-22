@@ -194,7 +194,7 @@ export function normOrc(r: unknown, precos: ItemPreco[], ivaDef: number, anterio
 }
 
 // O IVA aparece sempre nos totais: nunca entra nas listas de "não incluído" ou nos pressupostos.
-const semIva = (xs: string[]) => xs.filter((x) => !/\bIVA\b/i.test(x));
+export const semIva = (xs: string[]) => xs.filter((x) => !/\bIVA\b/i.test(x));
 const numeros = (v: unknown) => uniq(arr(v).map((x) => String(Math.round(num(x))))).map(Number).filter((n) => n > 0);
 
 // Completa um orçamento guardado antes da proposta completa existir.

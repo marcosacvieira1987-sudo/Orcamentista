@@ -16,6 +16,8 @@ Orçamentos de obras a partir de fotos. O profissional fotografa a obra, respond
 | PDF com a marca do profissional (gerado no telemóvel) e partilha direta (WhatsApp, email) | `lib/pdf.ts` |
 | Lista de orçamentos (rascunho / aprovado, total, custo de IA) | `app/orcamentos/page.tsx` |
 | Dois modelos de proposta: **completa** (capas, carta, resumo por fases, o que encontrámos, um capítulo por página, condições gerais, adjudicação com plano de pagamentos e IBAN) e **rápida** | `lib/pdf.ts`, `lib/prompts.ts` |
+| Letra Poppins nos PDF (licença SIL OFL, em `public/fontes`), com Helvetica de reserva | `lib/pdf.ts` |
+| Duplicar orçamento (com cópia das fotos) | `app/orcamentos/[id]/duplicar/route.ts` |
 | Numeração sequencial por empresa (ex.: MMGS-2026-001) | `supabase/migrations/0002_proposta_completa.sql` |
 | RGPD: isolamento por conta, exportar dados, apagar conta | `supabase/migrations`, `app/api/conta`, `app/privacidade` |
 
@@ -43,7 +45,7 @@ A lógica, os prompts e o desenho vêm do protótipo `Orçamentista` (HTML únic
 3. *Authentication → URL Configuration*:
    - **Site URL**: o endereço da app (ex.: `https://prumo.vercel.app`).
    - **Redirect URLs**: `https://prumo.vercel.app/auth/confirmar` (e `http://localhost:3000/auth/confirmar` para desenvolvimento).
-4. *Authentication → Emails*: traduza os modelos para português. Para produção, configure SMTP próprio, porque o envio de email incluído no Supabase tem limites baixos.
+4. *Authentication → Emails → Templates*: cole os textos em português de [`docs/emails-supabase.md`](docs/emails-supabase.md). Para produção, configure SMTP próprio, porque o envio de email incluído no Supabase tem limites baixos.
 
 ### 2. Variáveis de ambiente
 Copie `.env.example` para `.env.local` (local) e defina as mesmas no Vercel (*Settings → Environment Variables*):
@@ -57,7 +59,7 @@ Copie `.env.example` para `.env.local` (local) e defina as mesmas no Vercel (*Se
 | `LIMITE_IA_DIA` | Opcional (80) |
 
 ### 3. Vercel
-Importe o repositório no Vercel. Não precisa de mais configuração. A rota da IA pede até 300 s (`maxDuration`): o esboço do orçamento pode demorar 1–2 minutos.
+Importe o repositório no Vercel. As funções correm em Frankfurt (`vercel.json`), junto da base de dados. A rota da IA pede até 300 s (`maxDuration`): o esboço do orçamento pode demorar 1–2 minutos.
 
 ### Desenvolvimento local
 ```bash
