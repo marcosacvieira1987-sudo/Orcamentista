@@ -75,11 +75,21 @@ export default function ConfigForm({ inicial, userId, email }: { inicial: Empres
     setAGuardar(true); setEstado('');
     const f = empresaFinal();
     const { precos: lista, ...resto } = f;
-    const { error } = await sb.from('empresas').update({ ...resto, precos: lista }).eq('user_id', userId);
+    // .select() confirma que a linha foi gravada: com a sessão expirada o Supabase não dá erro, só não altera nada
+    const { data, error } = await sb.from('empresas').update({ ...resto, precos: lista }).eq('user_id', userId).select('user_id');
     setAGuardar(false);
     if (error) {
+      console.error('guardar empresa', error);
       // colunas novas em falta: a migração 0002 ainda não foi aplicada no Supabase
-      setEstado(/column|schema cache/i.test(error.message) ? 'Falta atualizar a base de dados (migração 0002 no Supabase). Os dados não foram guardados.' : 'Não foi possível guardar. Verifique a ligação e tente de novo.');
+      setEstado(/column|schema cache/i.test(error.message)
+        ? `Falta atualizar a base de dados (migração 0002 no Supabase). Nada foi guardado. (${error.message})`
+        : /check constraint/i.test(error.message)
+          ? `Há um valor fora dos limites (IVA, validade, imprevistos ou percentagens). Nada foi guardado. (${error.message})`
+          : `Não foi possível guardar. (${error.message})`);
+      return;
+    }
+    if (!data || !data.length) {
+      setEstado('A sua sessão expirou: nada foi guardado. Abra a app noutro separador, entre de novo e volte a carregar em Guardar aqui.');
       return;
     }
     setSujo(false); setEstado('Configuração guardada.');
@@ -221,8 +231,10 @@ export default function ConfigForm({ inicial, userId, email }: { inicial: Empres
           <div className="row"><button className="btn sm" onClick={exportar}>Descarregar os meus dados</button><button className="btn sm danger" onClick={apagarConta}>Apagar conta</button></div>
         </div>
       </section>
-      {estado ? <p className="small" role="status">{estado}</p> : null}
-      <div className="actions"><button className="btn lg" onClick={pdfExemplo}>PDF de exemplo</button><button className="btn primary lg grow" disabled={aGuardar} onClick={guardar}>{aGuardar ? 'A guardar…' : sujo ? 'Guardar' : 'Guardado'}</button></div>
+      <div className="actions actions-col">
+        {estado ? <p className={'small ' + (/guardada|descarregado/i.test(estado) ? 'ok-msg' : /A gerar/.test(estado) ? 'muted' : 'erro')} role="status">{estado}</p> : null}
+        <div className="row"><button className="btn lg" onClick={pdfExemplo}>PDF de exemplo</button><button className="btn primary lg grow" disabled={aGuardar} onClick={guardar}>{aGuardar ? 'A guardar…' : sujo ? 'Guardar' : 'Guardado'}</button></div>
+      </div>
     </div>
   );
 }

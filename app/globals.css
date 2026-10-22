@@ -436,3 +436,7 @@ a{color:inherit}
 .fase-ed input:focus{border-color:var(--accent)}
 .fase-ed .link{grid-column:2;justify-self:start;min-height:32px;padding:0}
 @media (min-width:1000px){.rev-custo{order:0}}
+/* barra fixa com a mensagem do resultado (sempre visível no telemóvel) */
+.actions.actions-col{flex-direction:column;align-items:stretch;gap:8px}
+.actions.actions-col > .row{flex-wrap:nowrap}
+.actions.actions-col > p{margin:0}
