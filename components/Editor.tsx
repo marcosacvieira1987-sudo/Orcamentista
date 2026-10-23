@@ -19,6 +19,8 @@ const PASSOS: [Passo, string][] = [['pedido', 'Pedido'], ['leitura', 'Fotos'], [
 const PASSO_TXT: Record<Passo, string> = { pedido: 'Passo 1 de 6 · Pedido', leitura: 'Passo 2 de 6 · Fotografias', perguntas: 'Passo 3 de 6 · Perguntas', medidas: 'Passo 4 de 6 · Medidas', revisao: 'Passo 5 de 6 · Revisão', pdf: 'Passo 6 de 6 · Proposta' };
 
 const ERROS: Record<string, string> = {
+  sem_plano: 'O período experimental terminou. Escolha um plano no menu "Plano" para continuar a usar a IA.',
+  so_premium: 'A proposta completa faz parte do plano Premium. Escolha a proposta rápida ou mude de plano no menu "Plano".',
   limite_diario: 'Chegou ao limite diário de pedidos à IA. Volte a tentar amanhã ou fale connosco.',
   rate_limited: 'A IA está com muitos pedidos neste momento. Espere um pouco e tente de novo.',
   session_expired: 'A sua sessão expirou. Entre de novo e tente outra vez.',
@@ -35,12 +37,12 @@ const msgErro = (code?: string) => (code && ERROS[code]) || 'Falhou a ligação 
 type Ocupado = { label: string; sub: string };
 type Erro = { msg: string; retry?: 'ler' | 'perguntas' | 'orcar'; back: Passo };
 
-export default function Editor({ orcId, userId, inicial, empresa }: { orcId: string; userId: string; inicial: Estado; empresa: Empresa }) {
+export default function Editor({ orcId, userId, inicial, empresa, premium = true }: { orcId: string; userId: string; inicial: Estado; empresa: Empresa; premium?: boolean }) {
   const router = useRouter();
   const sb = supabaseBrowser();
   // orçamentos antigos: modelo e campos da proposta completa com os valores da empresa
   const [S, setS] = useState<Estado>(() => ({
-    ...inicial, modelo: inicial.modelo || empresa.modelo, mostrar_precos: inicial.mostrar_precos || empresa.mostrar_precos,
+    ...inicial, modelo: premium ? inicial.modelo || empresa.modelo : 'rapido', mostrar_precos: inicial.mostrar_precos || empresa.mostrar_precos,
     orc: inicial.orc ? completarOrc(inicial.orc) : null
   }));
   const [custoIa, setCustoIa] = useState<number | null>(null);
@@ -387,7 +389,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
           </div>
           <div className="f"><span className="lab" id="lab-modelo">Proposta</span>
             <div className="chips" role="radiogroup" aria-labelledby="lab-modelo">
-              {([['completo', 'Completa: carta, capítulos e fases'], ['rapido', 'Rápida: resumo e mapa de preços']] as const).map(([v, t]) => <button key={v} type="button" className="chip" role="radio" aria-checked={S.modelo === v} onClick={() => upd((d) => { d.modelo = v; })}>{t}</button>)}
+              {([['completo', 'Completa: carta, capítulos e fases'], ['rapido', 'Rápida: resumo e mapa de preços']] as const).map(([v, t]) => <button key={v} type="button" className="chip" role="radio" aria-checked={S.modelo === v} disabled={v === 'completo' && !premium} onClick={() => upd((d) => { d.modelo = v; })}>{t}{v === 'completo' && !premium ? ' · Premium' : ''}</button>)}
             </div>
           </div>
           <label className="f"><span className="lab">Notas da visita</span><AreaTexto rows={3} value={p.notas} placeholder="O que o dono de obra quer, gama de materiais, quem compra os materiais, acessos, prazo… Pode ditar por voz." onChange={(e) => upd((d) => { d.pedido.notas = e.target.value; })} /><Ditado valor={p.notas} onValor={(v) => upd((d) => { d.pedido.notas = v; })} rotulo="Ditar as notas" /></label>
@@ -575,7 +577,7 @@ export default function Editor({ orcId, userId, inicial, empresa }: { orcId: str
   else if (S.step === 'leitura' && S.leitura) corpo = vLeitura();
   else if (S.step === 'perguntas' && S.perguntas) corpo = vPerguntas();
   else if (S.step === 'medidas' && S.medidas) corpo = vMedidas();
-  else if (S.step === 'revisao' && S.orc) corpo = busy ? vOcupado() : <Revisao S={S} upd={upd} empresa={empresa} ocupado={!!busy} custoIa={custoIa} onAjuste={aplicarAjuste} onVoltar={() => go('medidas')} toast={toast} onAprovar={() => { upd((d) => { d.aprovado = true; }); setPdfStatus(''); go('pdf'); }} />;
+  else if (S.step === 'revisao' && S.orc) corpo = busy ? vOcupado() : <Revisao S={S} upd={upd} empresa={empresa} premium={premium} ocupado={!!busy} custoIa={custoIa} onAjuste={aplicarAjuste} onVoltar={() => go('medidas')} toast={toast} onAprovar={() => { upd((d) => { d.aprovado = true; }); setPdfStatus(''); go('pdf'); }} />;
   else if (S.step === 'pdf' && S.orc && S.aprovado) corpo = vPdf();
   else corpo = vPedido();
 

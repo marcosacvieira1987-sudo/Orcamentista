@@ -121,7 +121,7 @@ export default function Landing() {
                   {p.destaque ? <span className="lp-selo">{p.destaque}</span> : null}
                   <h3>{p.nome}</h3>
                   <p className="lp-para">{p.para}</p>
-                  <p className="lp-preco"><strong>{p.preco} €</strong><span>/mês</span></p>
+                  <p className="lp-preco"><strong>{p.preco} €</strong><span>/mês + IVA</span></p>
                   <ul>{p.inclui.map((x) => <li key={x}><Icone n="certo" s={18} />{x}</li>)}</ul>
                   <Link href="/registar" className={'lp-btn lp-btn-lg' + (p.destaque ? '' : ' lp-btn-escuro')}>Experimentar o {p.nome}</Link>
                   <a href={p.exemplo.href} target="_blank" rel="noopener" className="lp-link">{p.exemplo.rotulo}</a>

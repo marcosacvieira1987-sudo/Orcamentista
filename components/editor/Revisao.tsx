@@ -9,7 +9,7 @@ import { AreaTexto, CampoNum, ICON } from './pecas';
 
 type Upd = (fn: (d: Estado) => void) => void;
 type Props = {
-  S: Estado; upd: Upd; empresa: Empresa; ocupado: boolean; custoIa: number | null;
+  S: Estado; upd: Upd; empresa: Empresa; premium?: boolean; ocupado: boolean; custoIa: number | null;
   onAjuste: (instr: string) => Promise<boolean>; onAprovar: () => void; onVoltar: () => void; toast: (msg: string, desfazer?: () => void) => void;
 };
 
@@ -18,7 +18,7 @@ const acharLinha = (d: Estado, id: string) => {
   return null;
 };
 
-export default function Revisao({ S, upd, empresa, ocupado, custoIa, onAjuste, onAprovar, onVoltar, toast }: Props) {
+export default function Revisao({ S, upd, empresa, premium = true, ocupado, custoIa, onAjuste, onAprovar, onVoltar, toast }: Props) {
   const completa = S.modelo === 'completo';
   const [outro, setOutro] = useState<string | null>(null);
   const [outroTxt, setOutroTxt] = useState('');
@@ -220,7 +220,7 @@ export default function Revisao({ S, upd, empresa, ocupado, custoIa, onAjuste, o
           {totalBox}
           <section className="sheet rev-meta" aria-label="Dados da proposta">
             <div className="f"><span className="lab" id="lab-mod">Modelo do PDF</span>
-              <div className="chips" role="radiogroup" aria-labelledby="lab-mod">{([['completo', 'Completa'], ['rapido', 'Rápida']] as const).map(([v, t]) => <button key={v} type="button" className="chip" role="radio" aria-checked={S.modelo === v} onClick={() => upd((d) => { d.modelo = v; })}>{t}</button>)}</div>
+              <div className="chips" role="radiogroup" aria-labelledby="lab-mod">{([['completo', 'Completa'], ['rapido', 'Rápida']] as const).map(([v, t]) => <button key={v} type="button" className="chip" role="radio" aria-checked={S.modelo === v} disabled={v === 'completo' && !premium} onClick={() => upd((d) => { d.modelo = v; })}>{t}{v === 'completo' && !premium ? ' · Premium' : ''}</button>)}</div>
               {completa && !o.apresentacao ? <span className="small muted">Este orçamento foi montado no modelo rápido: para ter a carta e os textos dos capítulos, peça um ajuste à IA ou volte a montar o orçamento.</span> : null}
             </div>
             {completa ? (

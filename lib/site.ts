@@ -23,7 +23,7 @@ export const SITE = {
     eyebrow: 'Para profissionais de remodelação',
     titulo: ['Fotografe a obra.', 'A proposta monta-se.'],
     texto: 'A inteligência artificial lê as fotografias, propõe as quantidades e aplica os preços do seu preçário. Revê, ajusta e envia ao cliente um PDF com a sua marca, por WhatsApp ou email.',
-    cta: 'Criar conta',
+    cta: 'Experimentar 14 dias grátis',
     secundario: 'Ver uma proposta',
   },
   factos: [
@@ -90,7 +90,7 @@ export const SITE = {
       exemplo: { href: '/landing/exemplo-proposta-completa.pdf', rotulo: 'Ver exemplo da proposta completa' },
     },
   ] satisfies Plano[],
-  notaPlanos: 'Valores por mês, sem IVA. Estamos em fase de lançamento: crie a conta e experimente. Avisamos antes de ativar a subscrição.',
+  notaPlanos: 'Valores por mês, sem IVA. Os primeiros 14 dias são grátis, com tudo incluído e sem cartão. Depois escolhe o plano; pode mudar ou cancelar quando quiser.',
   perguntas: [
     { p: 'Preciso de saber de informática?', r: 'Não. Se tira fotografias e envia mensagens no telemóvel, consegue usar. O app guia-o passo a passo.' },
     { p: 'Os preços são inventados pela IA?', r: 'Não. A IA usa o seu preçário. Quando um trabalho não está na tabela, fica assinalado para confirmar antes de enviar.' },

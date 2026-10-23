@@ -522,3 +522,18 @@ a{color:inherit}
 .wm-main{overflow-wrap:normal}
 .wm-main.long{font-size:16px;line-height:1.15}
 @media (max-width:420px){.top{gap:8px}.menu a,.menu button{padding:0 7px}}
+
+/* planos (dentro do app) */
+.wrap-planos{max-width:900px}
+.ok-box{box-shadow:inset 3px 0 0 var(--ok)}
+.plano-sit form{margin-top:4px}
+.planos-app{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.plano-app{display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:16px;background:var(--surface);border:1px solid var(--hair)}
+.plano-app.destaque{border-color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
+.plano-app.atual{border-color:var(--ok);box-shadow:inset 0 3px 0 var(--ok)}
+.plano-app h2{font-size:22px}
+.plano-preco strong{font-size:34px;letter-spacing:-.03em;font-weight:700}
+.plano-app ul{display:grid;gap:6px;padding-left:18px;font-size:14px;flex:1}
+.plano-app form{margin-top:6px}
+.plano-app > a{color:var(--accent)}
+@media (min-width:720px){.planos-app{grid-template-columns:repeat(2,minmax(0,1fr))}}

@@ -4,6 +4,7 @@ import { lerEmpresa } from '@/lib/empresa';
 import { ErroIA, perguntarClaude, perguntarJSON, type Uso } from '@/lib/ia';
 import { ivaPadrao, juntarLeituras, normOrc, normPerguntas, type Empresa, type Estado, type Modelo, type Orc } from '@/lib/orc';
 import { promptAjuste, promptLeitura, promptMensagem, promptOrcamento, promptPerguntas, type Contexto } from '@/lib/prompts';
+import { lerAcesso } from '@/lib/plano';
 import { utilizadorAtual } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -25,6 +26,11 @@ export async function POST(req: Request) {
 
   let corpo: Corpo;
   try { corpo = await req.json(); } catch { return NextResponse.json({ code: 'invalid_request' }, { status: 400 }); }
+
+  // Plano: sem plano ativo a IA para; a proposta completa é só do Premium.
+  const acesso = await lerAcesso(u.sb, u.id, u.email);
+  if (!acesso.plano) return NextResponse.json({ code: 'sem_plano' }, { status: 402 });
+  if (acesso.plano === 'pro' && (corpo.acao === 'orcamento' || corpo.acao === 'ajuste') && corpo.modelo === 'completo') return NextResponse.json({ code: 'so_premium' }, { status: 403 });
 
   // Limite diário por utilizador (controlo de custos). As linhas só podem ser lidas e acrescentadas.
   const desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString();

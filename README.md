@@ -21,6 +21,7 @@ Orçamentos de obras a partir de fotos. O profissional fotografa a obra, respond
 | Enviar por WhatsApp e email: mensagem preenchida e link seguro do PDF, válido durante a validade da proposta | `components/Editor.tsx` |
 | Duplicar orçamento (com cópia das fotos) | `app/orcamentos/[id]/duplicar/route.ts` |
 | Numeração sequencial por empresa (ex.: MMGS-2026-001) | `supabase/migrations/0002_proposta_completa.sql` |
+| Subscrições Stripe: 14 dias grátis, Pro (proposta rápida) e Premium (completa), pagamento, portal do cliente e webhook. A IA para sem plano | `lib/plano.ts`, `lib/stripe.ts`, `app/api/pagamentos/*`, `app/planos` |
 | RGPD: isolamento por conta, exportar dados, apagar conta | `supabase/migrations`, `app/api/conta`, `app/privacidade` |
 
 A lógica, os prompts e o desenho vêm do protótipo `Orçamentista` (HTML único): os prompts estão iguais, a normalização das respostas e os cálculos foram passados para `lib/orc.ts`, o PDF para `lib/pdf.ts` e o CSS para `app/globals.css`.
@@ -45,6 +46,7 @@ A lógica, os prompts e o desenho vêm do protótipo `Orçamentista` (HTML únic
    - `supabase/migrations/0001_inicial.sql` — tabelas, regras de acesso e ficheiros;
    - `supabase/migrations/0002_proposta_completa.sql` — proposta completa, numeração sequencial e custo da IA por orçamento.
    - `supabase/migrations/0003_propostas_enviadas.sql` — PDFs enviados por link (WhatsApp e email).
+   - `supabase/migrations/0004_assinaturas.sql` — subscrições e período experimental (ver [`docs/pagamentos.md`](docs/pagamentos.md)).
 3. *Authentication → URL Configuration*:
    - **Site URL**: o endereço da app (ex.: `https://prumo.vercel.app`).
    - **Redirect URLs**: `https://prumo.vercel.app/auth/confirmar` (e `http://localhost:3000/auth/confirmar` para desenvolvimento).
@@ -57,9 +59,10 @@ Copie `.env.example` para `.env.local` (local) e defina as mesmas no Vercel (*Se
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Chave pública (`sb_publishable_…`, ou a antiga `anon`) |
-| `SUPABASE_SECRET_KEY` | Chave secreta (`sb_secret_…`, ou a antiga `service_role`). Só serve para apagar contas |
+| `SUPABASE_SECRET_KEY` | Chave secreta (`sb_secret_…`, ou a antiga `service_role`). Para apagar contas e gravar as subscrições |
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) → API Keys |
 | `LIMITE_IA_DIA` | Opcional (80) |
+| `STRIPE_*`, `CONTAS_ISENTAS` | Pagamentos: passo a passo em [`docs/pagamentos.md`](docs/pagamentos.md) |
 
 ### 3. Vercel
 Importe o repositório no Vercel. As funções correm em Frankfurt (`vercel.json`), junto da base de dados. A rota da IA pede até 300 s (`maxDuration`): o esboço do orçamento pode demorar 1–2 minutos.
@@ -70,11 +73,10 @@ npm install
 npx supabase start            # Supabase local (Docker); aplica a migração
 # copie para .env.local o URL e as chaves que o comando mostra, e a sua ANTHROPIC_API_KEY
 npm run dev
-node scripts/testar-rls.mjs   # 17 verificações de isolamento entre contas
+node scripts/testar-rls.mjs   # 28 verificações de isolamento entre contas
 ```
 
 ## Depois do MVP
-- **Subscrições** (ex.: Stripe Billing): tabela `subscricoes` ligada a `auth.users`, webhook no servidor, e o limite diário da IA passa a depender do plano.
+- Faturação certificada pela AT ligada ao Stripe (ver o fim de [`docs/pagamentos.md`](docs/pagamentos.md)).
 - Política de privacidade e termos revistos por um jurista (a página atual é um rascunho), registo das atividades de tratamento e um contrato de subcontratação (DPA) com Supabase e Anthropic.
 - Taxas de IVA das regiões autónomas (Açores, Madeira): a revisão só oferece 23/13/6 %.
-- Numeração sequencial das propostas por empresa (hoje é data + iniciais do cliente, editável).

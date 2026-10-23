@@ -81,5 +81,15 @@ const { data: lnkA } = await A.sb.storage.from('propostas').createSignedUrl(`${A
 const r = lnkA?.signedUrl ? await fetch(lnkA.signedUrl) : null;
 ok(!!r && r.ok, 'o link assinado de A abre o PDF sem sessão (é o que o cliente recebe)');
 
+// subscrições: cada conta lê a sua, ninguém altera o próprio plano
+const { data: assA } = await A.sb.from('assinaturas').select('*');
+ok(assA?.length === 1 && assA[0].user_id === A.id && new Date(assA[0].experimental_ate) > new Date(), 'conta nova com período experimental');
+const { data: assB } = await B.sb.from('assinaturas').select('*').eq('user_id', A.id);
+ok(!assB || assB.length === 0, 'B não lê a subscrição de A');
+const { data: assUpd } = await A.sb.from('assinaturas').update({ plano: 'premium', estado: 'active', experimental_ate: '2099-01-01' }).eq('user_id', A.id).select();
+ok(!assUpd || assUpd.length === 0, 'A não consegue dar a si própria um plano nem prolongar a experiência');
+const { error: assIns } = await B.sb.from('assinaturas').insert({ user_id: B.id, plano: 'premium', estado: 'active' });
+ok(!!assIns, 'B não cria uma subscrição para si');
+
 console.log(falhas ? `\n${falhas} falha(s)` : '\nTudo isolado.');
 process.exit(falhas ? 1 : 0);

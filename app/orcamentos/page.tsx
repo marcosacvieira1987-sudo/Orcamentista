@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Topo from '@/components/Topo';
 import { descObra } from '@/lib/orc';
+import { lerAcesso } from '@/lib/plano';
 import { exigirUtilizador } from '@/lib/supabase/server';
 import { fmtData, fmtEUR, maiuscula } from '@/lib/util';
 
@@ -15,11 +16,12 @@ function estadoDe(o: { estado: string; enviado: string | null }) {
 }
 
 export default async function Orcamentos() {
-  const { sb } = await exigirUtilizador();
-  const [{ data: emp }, { data: lista }, { data: usos }] = await Promise.all([
+  const { sb, id, email } = await exigirUtilizador();
+  const [{ data: emp }, { data: lista }, { data: usos }, acesso] = await Promise.all([
     sb.from('empresas').select('nome, precos, logo_path, telefone, email').maybeSingle(),
     sb.from('orcamentos').select('id, estado, numero, tipo, localidade, dono, total, atualizado_em, titulo:dados->orc->>titulo, enviado:dados->meta->>enviado').order('atualizado_em', { ascending: false }).limit(200),
-    sb.from('uso_ia').select('orcamento_id, custo_usd').not('orcamento_id', 'is', null)
+    sb.from('uso_ia').select('orcamento_id, custo_usd').not('orcamento_id', 'is', null),
+    lerAcesso(sb, id, email)
   ]);
   // custo de IA por orçamento (vazio enquanto a migração 0002 não estiver aplicada)
   const custo = new Map<string, number>();
@@ -49,6 +51,14 @@ export default async function Orcamentos() {
           <div className="intro-t"><span className="eyebrow">Os seus orçamentos</span><h1>Orçamentos</h1></div>
           <form action="/orcamentos/novo" method="post"><button className="btn primary lg btn-novo">{MAIS}Novo orçamento</button></form>
         </section>
+
+        {acesso.via === 'nenhum' ? (
+          <section className="callout crit"><strong>Sem plano ativo</strong><p className="small">Os seus orçamentos continuam disponíveis, mas a IA está em pausa.</p><div><Link className="btn primary sm" href="/planos">Escolher um plano</Link></div></section>
+        ) : acesso.via === 'experimental' && acesso.diasExperimental <= 5 ? (
+          <section className="callout warn"><strong>{acesso.diasExperimental === 1 ? 'Falta 1 dia' : `Faltam ${acesso.diasExperimental} dias`} do período experimental</strong><p className="small">Escolha um plano para continuar a usar a IA sem interrupções.</p><div><Link className="btn sm" href="/planos">Ver planos</Link></div></section>
+        ) : acesso.via === 'subscricao' && acesso.estado === 'past_due' ? (
+          <section className="callout crit"><strong>O último pagamento falhou</strong><p className="small">Atualize o cartão para não perder o acesso.</p><div><Link className="btn sm" href="/planos">Resolver</Link></div></section>
+        ) : null}
 
         {feitos < passos.length ? (
           <section className="passos-ini" aria-labelledby="ini-t">
