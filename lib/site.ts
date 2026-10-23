@@ -102,9 +102,9 @@ export const SITE = {
   // Outros negócios: preencher quando houver os dados. Com null, a secção não aparece.
   negocio: null as Negocio | null,
   // Email ou página de contacto público. Vazio: não aparece no rodapé.
-  contacto: '',
+  contacto: 'mmgs.geral@gmail.com',
   // Quem vende o serviço (aparece nos termos e na privacidade). Preencher antes de cobrar.
-  titular: { nome: '', nif: '', morada: '', email: '' },
+  titular: { nome: 'MMGS Unipessoal Lda', nif: '519696158', morada: 'R. Carlos Amaro de Matos 50, 2700-162 Amadora', email: 'mmgs.geral@gmail.com' },
   // obrigatório em Portugal para quem vende online
   livroReclamacoes: 'https://www.livroreclamacoes.pt/Inicio/',
 };
