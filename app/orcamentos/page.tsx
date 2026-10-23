@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Topo from '@/components/Topo';
 import { descObra } from '@/lib/orc';
+import { marcaDaConta } from '@/lib/marca-app';
 import { lerAcesso, usoMensal } from '@/lib/plano';
 import { fmtDataLisboa } from '@/lib/planos';
 import { exigirUtilizador } from '@/lib/supabase/server';
@@ -10,21 +11,30 @@ export const dynamic = 'force-dynamic';
 
 const MAIS = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>;
 
-// Rascunho → Aprovado → Enviado (o envio fica registado em dados.meta.enviado).
-function estadoDe(o: { estado: string; enviado: string | null }) {
+type Pub = { orcamento_id: string; vistas: number; aceite_em: string | null; aceite_nome: string | null };
+
+// Rascunho → Aprovado → Enviado → Vista → Aceite (envio em dados.meta.enviado; vista e aceite na página da proposta).
+function estadoDe(o: { estado: string; enviado: string | null }, p?: Pub) {
+  if (p?.aceite_em) return { cls: 'aceite', txt: 'Aceite' };
+  if (p?.vistas) return { cls: 'enviado', txt: 'Vista pelo cliente' };
   if (o.enviado) return { cls: 'enviado', txt: 'Enviado' };
   return o.estado === 'aprovado' ? { cls: 'aprovado', txt: 'Aprovado' } : { cls: 'rascunho', txt: 'Rascunho' };
 }
 
 export default async function Orcamentos() {
   const { sb, id, email } = await exigirUtilizador();
-  const [{ data: emp }, { data: lista }, { data: usos }, acesso, mes] = await Promise.all([
-    sb.from('empresas').select('nome, precos, logo_path, telefone, email').maybeSingle(),
+  const [{ data: emp }, { data: lista }, { data: usos }, acesso, mes, { data: pubs }] = await Promise.all([
+    sb.from('empresas').select('nome, precos, logo_path, telefone, email, cor').maybeSingle(),
     sb.from('orcamentos').select('id, estado, numero, tipo, localidade, dono, total, atualizado_em, titulo:dados->orc->>titulo, enviado:dados->meta->>enviado').order('atualizado_em', { ascending: false }).limit(200),
     sb.from('uso_ia').select('orcamento_id, custo_usd').not('orcamento_id', 'is', null),
     lerAcesso(sb, id, email),
-    usoMensal(sb)
+    usoMensal(sb),
+    // página da proposta (migração 0006); sem a tabela, fica vazio
+    sb.from('propostas').select('orcamento_id, vistas, aceite_em, aceite_nome')
   ]);
+  const marca = await marcaDaConta(sb, acesso, emp);
+  const pub = new Map<string, Pub>(((pubs || []) as Pub[]).map((p) => [p.orcamento_id, p]));
+  const aceitesRecentes = ((pubs || []) as Pub[]).filter((p) => p.aceite_em && Date.now() - new Date(p.aceite_em).getTime() < 14 * 86400000);
   // custo de IA por orçamento (vazio enquanto a migração 0002 não estiver aplicada)
   const custo = new Map<string, number>();
   for (const x of usos || []) custo.set(x.orcamento_id, (custo.get(x.orcamento_id) || 0) + Number(x.custo_usd || 0));
@@ -47,12 +57,21 @@ export default async function Orcamentos() {
 
   return (
     <div className="wrap wrap-lista">
-      <Topo empresa={emp?.nome} atual="orcamentos" />
+      <Topo empresa={emp?.nome} atual="orcamentos" marca={marca} />
       <main>
         <section className="intro intro-row">
           <div className="intro-t"><span className="eyebrow">Os seus orçamentos</span><h1>Orçamentos</h1></div>
           <form action="/orcamentos/novo" method="post"><button className="btn primary lg btn-novo">{MAIS}Novo orçamento</button></form>
         </section>
+
+        {aceitesRecentes.length ? (
+          <section className="callout ok-box aceites" aria-label="Propostas aceites">
+            {aceitesRecentes.map((p) => {
+              const o = (lista || []).find((x) => x.id === p.orcamento_id);
+              return <Link key={p.orcamento_id} href={`/orcamentos/${p.orcamento_id}`}><strong>{p.aceite_nome} aceitou a proposta{o?.numero ? ` n.º ${o.numero}` : ''}</strong><span className="small">{o?.titulo || 'Orçamento'} · {fmtData(new Date(p.aceite_em!))}</span></Link>;
+            })}
+          </section>
+        ) : null}
 
         {acesso.via === 'nenhum' ? (
           <section className="callout crit"><strong>Sem plano ativo</strong><p className="small">Os seus orçamentos continuam disponíveis, mas a IA está em pausa.</p><div><Link className="btn primary sm" href="/planos">Escolher um plano</Link></div></section>
@@ -101,7 +120,7 @@ export default async function Orcamentos() {
         ) : (
           <section className="cartoes" aria-label="Lista de orçamentos">
             {orcs.map((o) => {
-              const e = estadoDe(o);
+              const e = estadoDe(o, pub.get(o.id));
               const c = custo.get(o.id);
               return (
                 <Link key={o.id} href={`/orcamentos/${o.id}`} className={'cartao ' + e.cls}>

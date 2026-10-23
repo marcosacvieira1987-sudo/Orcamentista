@@ -8,20 +8,22 @@ export type Tarifa = 'normal' | 'lancamento';
 type Def = {
   nome: string;
   completa: boolean;          // proposta completa (capas, carta, fases, adjudicação)
+  marca: boolean;             // espaço personalizado: marca no app, página da proposta para o cliente, textos pela IA
   limite: number;             // orçamentos com IA por mês de calendário
   textosIA: number;           // vezes por mês que a IA refaz os textos da marca (espaço personalizado, fase 3)
   precos: Record<Tarifa, Record<Periodo, number>>; // euros sem IVA
 };
 
 export const PLANOS: Record<PlanoId, Def> = {
-  essencial: { nome: 'Essencial', completa: false, limite: 6, textosIA: 0, precos: { normal: { mensal: 29, anual: 290 }, lancamento: { mensal: 19, anual: 190 } } },
-  pro: { nome: 'Pro', completa: false, limite: 12, textosIA: 3, precos: { normal: { mensal: 59, anual: 590 }, lancamento: { mensal: 39, anual: 390 } } },
-  premium: { nome: 'Premium', completa: true, limite: 36, textosIA: 10, precos: { normal: { mensal: 180, anual: 1800 }, lancamento: { mensal: 119, anual: 1190 } } },
+  essencial: { nome: 'Essencial', completa: false, marca: false, limite: 6, textosIA: 0, precos: { normal: { mensal: 29, anual: 290 }, lancamento: { mensal: 19, anual: 190 } } },
+  pro: { nome: 'Pro', completa: false, marca: true, limite: 12, textosIA: 3, precos: { normal: { mensal: 59, anual: 590 }, lancamento: { mensal: 39, anual: 390 } } },
+  premium: { nome: 'Premium', completa: true, marca: true, limite: 36, textosIA: 10, precos: { normal: { mensal: 180, anual: 1800 }, lancamento: { mensal: 119, anual: 1190 } } },
 };
 export const ORDEM: PlanoId[] = ['essencial', 'pro', 'premium'];
 
 // 14 dias grátis: funções do Premium com o limite do Essencial
 export const LIMITE_EXPERIMENTAL = PLANOS.essencial.limite;
+export const LIMITE_TEXTOS_EXPERIMENTAL = PLANOS.pro.textosIA;
 
 export const ehPlano = (v: unknown): v is PlanoId => v === 'essencial' || v === 'pro' || v === 'premium';
 export const ehPeriodo = (v: unknown): v is Periodo => v === 'mensal' || v === 'anual';

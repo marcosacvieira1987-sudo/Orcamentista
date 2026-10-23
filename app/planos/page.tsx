@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import AdminStripe from '@/components/AdminStripe';
 import Topo from '@/components/Topo';
+import { marcaDaConta } from '@/lib/marca-app';
 import { lerAcesso, usoMensal, type Acesso } from '@/lib/plano';
 import { ehAdmin, ehBeta, fmtDataLisboa as fmtData, fmtPreco, janelaLancamento, lancamentoAberto, ORDEM, PLANOS, type Periodo, type Tarifa } from '@/lib/planos';
 import { SITE } from '@/lib/site';
@@ -43,8 +44,9 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
     } catch (e) { console.error('regresso do checkout', e); }
   }
 
-  const [{ data: emp }, acesso, mes] = await Promise.all([sb.from('empresas').select('nome').maybeSingle(), lerAcesso(sb, id, email), usoMensal(sb)]);
+  const [{ data: emp }, acesso, mes] = await Promise.all([sb.from('empresas').select('nome, cor, logo_path').maybeSingle(), lerAcesso(sb, id, email), usoMensal(sb)]);
   const sit = situacao(acesso);
+  const marca = await marcaDaConta(sb, acesso, emp);
   const subscrito = acesso.via === 'subscricao';
 
   // preço que esta conta paga: o da sua subscrição, ou o de lançamento (datas ou beta), ou o normal
@@ -56,7 +58,7 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
 
   return (
     <div className="wrap wrap-planos">
-      <Topo empresa={emp?.nome} atual="planos" />
+      <Topo empresa={emp?.nome} atual="planos" marca={marca} />
       <main>
         <section className="intro"><span className="eyebrow">Subscrição</span><h1>O seu plano</h1></section>
         {pago ? <p className="callout ok-box" role="status"><strong>Pagamento recebido. Obrigado!</strong> O plano já está ativo.</p> : null}

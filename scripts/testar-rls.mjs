@@ -91,5 +91,18 @@ ok(!assUpd || assUpd.length === 0, 'A não consegue dar a si própria um plano n
 const { error: assIns } = await B.sb.from('assinaturas').insert({ user_id: B.id, plano: 'premium', estado: 'active' });
 ok(!!assIns, 'B não cria uma subscrição para si');
 
+// página da proposta: cada conta publica e lê as suas; sem sessão não se lê nada (o cliente entra pelo servidor)
+const tokA = 'a'.repeat(48);
+const { error: pubA } = await A.sb.from('propostas').insert({ token: tokA, orcamento_id: orcA.id, dados: { v: 1 } });
+ok(!pubA, 'A publica a página de uma proposta sua');
+const { data: pubB } = await B.sb.from('propostas').select('*').eq('token', tokA);
+ok(!pubB || pubB.length === 0, 'B não lê a página publicada de A, nem sabendo o token');
+const { data: aceB } = await B.sb.from('propostas').update({ aceite_nome: 'pirata', aceite_em: new Date().toISOString() }).eq('token', tokA).select();
+ok(!aceB || aceB.length === 0, 'B não marca como aceite a proposta de A');
+const { data: pubAnon } = await anon.from('propostas').select('*');
+ok(!pubAnon || pubAnon.length === 0, 'sem sessão não se lê nenhuma proposta publicada');
+const { error: pubCurto } = await A.sb.from('propostas').insert({ token: 'curto', orcamento_id: orcA.id, dados: {} });
+ok(!!pubCurto, 'tokens curtos (adivinháveis) são recusados');
+
 console.log(falhas ? `\n${falhas} falha(s)` : '\nTudo isolado.');
 process.exit(falhas ? 1 : 0);

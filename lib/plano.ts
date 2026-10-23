@@ -1,6 +1,6 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ehIsento, LIMITE_EXPERIMENTAL, mesLisboa, PLANOS, type Periodo, type PlanoId } from './planos';
+import { ehIsento, LIMITE_EXPERIMENTAL, LIMITE_TEXTOS_EXPERIMENTAL, mesLisboa, PLANOS, type Periodo, type PlanoId } from './planos';
 
 export type { PlanoId } from './planos';
 
@@ -10,7 +10,9 @@ export type Acesso = {
   plano: PlanoId | null;
   via: 'subscricao' | 'experimental' | 'isento' | 'nenhum';
   completa: boolean;
+  marca: boolean;               // espaço personalizado (Pro, Premium, experiência)
   limite: number;               // orçamentos com IA por mês (Infinity: sem limite)
+  limiteTextos: number;         // vezes por mês que a IA escreve os textos da marca
   diasExperimental: number;
   estado: string;
   periodo: Periodo | null;
@@ -30,7 +32,7 @@ export const MONTAGENS_POR_ORCAMENTO = 5;
 
 export async function lerAcesso(sb: SupabaseClient, userId: string, email: string): Promise<Acesso> {
   const base = { estado: '', periodo: null, lancamento: false, periodoFim: null, cancelaNoFim: false, primeiraCompra: null, jaSubscreveu: false, cliente: false, diasExperimental: 0 };
-  const total: Acesso = { ...base, plano: 'premium', via: 'isento', completa: true, limite: Infinity };
+  const total: Acesso = { ...base, plano: 'premium', via: 'isento', completa: true, marca: true, limite: Infinity, limiteTextos: Infinity };
   if (ehIsento(email)) return total;
   const { data, error } = await sb.from('assinaturas').select('*').eq('user_id', userId).maybeSingle();
   // base de dados ainda sem a migração 0004: não bloqueia ninguém
@@ -43,9 +45,9 @@ export async function lerAcesso(sb: SupabaseClient, userId: string, email: strin
   };
   const dias = r.experimental_ate ? Math.max(0, Math.ceil((new Date(r.experimental_ate).getTime() - Date.now()) / 86400000)) : 0;
   const plano = r.plano as PlanoId | null;
-  if (plano && PLANOS[plano] && ESTADOS_ATIVOS.includes(info.estado)) return { ...info, plano, via: 'subscricao', completa: PLANOS[plano].completa, limite: PLANOS[plano].limite, diasExperimental: dias };
-  if (dias > 0) return { ...info, plano: 'premium', via: 'experimental', completa: true, limite: LIMITE_EXPERIMENTAL, diasExperimental: dias };
-  return { ...info, plano: null, via: 'nenhum', completa: false, limite: 0, diasExperimental: 0 };
+  if (plano && PLANOS[plano] && ESTADOS_ATIVOS.includes(info.estado)) return { ...info, plano, via: 'subscricao', completa: PLANOS[plano].completa, marca: PLANOS[plano].marca, limite: PLANOS[plano].limite, limiteTextos: PLANOS[plano].textosIA, diasExperimental: dias };
+  if (dias > 0) return { ...info, plano: 'premium', via: 'experimental', completa: true, marca: true, limite: LIMITE_EXPERIMENTAL, limiteTextos: LIMITE_TEXTOS_EXPERIMENTAL, diasExperimental: dias };
+  return { ...info, plano: null, via: 'nenhum', completa: false, marca: false, limite: 0, limiteTextos: 0, diasExperimental: 0 };
 }
 
 // Orçamentos em que a IA já trabalhou este mês (Lisboa). Ajustes ao mesmo orçamento não contam outra vez.
@@ -61,4 +63,11 @@ export async function usoMensal(sb: SupabaseClient) {
     if (x.acao === 'orcamento') montagens.set(id, (montagens.get(id) || 0) + 1);
   }
   return { usados: ids.size, ids, montagens, renova: seguinte };
+}
+
+// Vezes que a IA escreveu os textos da marca este mês (só contam respostas com tokens).
+export async function textosNoMes(sb: SupabaseClient) {
+  const { inicio } = mesLisboa();
+  const { count } = await sb.from('uso_ia').select('id', { count: 'exact', head: true }).eq('acao', 'textos').gte('criado_em', inicio.toISOString()).gt('tokens_in', 0);
+  return count || 0;
 }

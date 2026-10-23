@@ -13,18 +13,7 @@ Atelier: chão de cal, folhas brancas com filetes, tinta grafite e um só acento
   --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --bg:#0F1214;--surface:#171B1E;--surface-2:#1C2125;--ink:#E9ECE8;--muted:#9AA3A8;--hair:#2A3034;--hair-2:#3A4247;--tick:#5C6469;
-    --accent:#8FA8EE;--accent-ink:#0F1214;
-    --ok:#6CC59A;--warn:#E2B25E;--warn-soft:#2B2416;--crit:#F0938A;
-    --pend-bg:#221819;--pend-line:#3A2826;--pend-seg:#4A2C29;--track:#4A3533;
-    --off-bg:#283042;--off-ink:#77819A;--hatch-a:#1E2327;--hatch-b:#252A2E;
-    --on-bg:#E9ECE8;--on-ink:#0F1214;
-    --shadow:0 1px 2px rgba(0,0,0,.45),0 14px 32px rgba(0,0,0,.5);
-    color-scheme:dark;
-  }
-}
+/* O app é sempre claro (bom contraste, legível ao sol). O tema escuro só com data-theme="dark". */
 :root[data-theme="dark"]{
   --bg:#0F1214;--surface:#171B1E;--surface-2:#1C2125;--ink:#E9ECE8;--muted:#9AA3A8;--hair:#2A3034;--hair-2:#3A4247;--tick:#5C6469;
   --accent:#8FA8EE;--accent-ink:#0F1214;
@@ -553,3 +542,32 @@ a{color:inherit}
 .segredo{display:block;padding:8px;border-radius:6px;background:var(--surface);font:500 12px/1.4 var(--mono);overflow-wrap:anywhere;user-select:all}
 @media (min-width:980px){.wrap-planos{max-width:1100px}.planos-app{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .periodo .chip{display:inline-flex;align-items:center}
+
+/* a sua marca: paleta do logótipo, modelos de apresentação, questionário */
+.paleta{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 10px}
+.pal-cor{display:flex;flex-direction:column;align-items:center;gap:4px}
+.pal-chip{width:44px;height:44px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--hair-2);cursor:pointer}
+.pal-chip[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ink)}
+.pal-2{min-height:24px;font-size:11px;padding:0}
+.pal-2[aria-pressed="true"]{font-weight:700;color:var(--ink)}
+.marca-sec .cor-row{flex-wrap:wrap}
+.modelos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:4px 0 10px}
+.modelo-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px;border:1px solid var(--hair);border-radius:12px;background:var(--surface);color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.modelo-card[aria-checked="true"]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.mc-amostra{display:flex;flex-direction:column;gap:4px;width:100%;height:58px;padding:8px;border-radius:8px;background:#F7F8F6;margin-bottom:4px;overflow:hidden}
+.mc-amostra i{display:block;height:10px;width:55%;border-bottom:2px solid var(--mc)}
+.mc-amostra b{display:block;height:6px;border-radius:3px;background:#DDE0DB}
+.mc-amostra b + b{width:70%}
+.m-moderno .mc-amostra{background:linear-gradient(var(--mc) 0 22px,#F7F8F6 22px)}
+.m-moderno .mc-amostra i{border:0;background:rgba(255,255,255,.85);border-radius:3px;height:8px}
+.m-sobrio .mc-amostra i{border-bottom:2px solid #101315}
+@media (max-width:420px){.modelos{grid-template-columns:minmax(0,1fr)}.modelo-card{flex-direction:column}}
+.questionario{border-top:1px solid var(--hair)}
+.questionario > summary{padding:14px 16px;font-weight:600;cursor:pointer}
+.questionario .f{border-top:1px solid var(--hair)}
+.questionario > .f input{width:100%;padding:0;border:0;background:transparent;font:400 16px/1.45 var(--sans);outline:none;color:var(--ink)}
+.pub-estado{display:flex;flex-direction:column;gap:6px;color:var(--muted)}
+.estado.aceite{background:var(--ok);color:#fff}
+.cartao.aceite{box-shadow:inset 3px 0 0 var(--ok)}
+.aceites{gap:8px}
+.aceites a{display:flex;flex-direction:column;text-decoration:none}

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { bytesDe, carregarFoto, urlsAssinadas } from '@/lib/fotos';
 import { completarOrc, descObra, LEITURA_VAZIA, juntarLeituras, linhas, numeroProposta, partesMarca, textoSeguro, TIPOS_OBRA, totais, validadePadrao, type Empresa, type Estado, type Leitura, type Orc, type Passo, type Pergunta } from '@/lib/orc';
 import { carregarFontes, descarregar, gerarPDF, nomeFicheiro } from '@/lib/pdf';
+import { gerarToken, instantaneo } from '@/lib/proposta';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { deIso, fmtData, fmtEUR, isoHoje, maiuscula, norm, num, pad, uid, un } from '@/lib/util';
 import Revisao from './editor/Revisao';
@@ -39,7 +40,9 @@ const msgErro = (code?: string) => (code && ERROS[code]) || 'Falhou a ligação 
 type Ocupado = { label: string; sub: string };
 type Erro = { msg: string; retry?: 'ler' | 'perguntas' | 'orcar'; back: Passo };
 
-export default function Editor({ orcId, userId, inicial, empresa, premium = true }: { orcId: string; userId: string; inicial: Estado; empresa: Empresa; premium?: boolean }) {
+type Publicada = { token: string; vistas: number; vista_em: string | null; aceite_nome: string | null; aceite_em: string | null; aceite_nota: string | null };
+
+export default function Editor({ orcId, userId, inicial, empresa, premium = true, pagina = false }: { orcId: string; userId: string; inicial: Estado; empresa: Empresa; premium?: boolean; pagina?: boolean }) {
   const router = useRouter();
   const sb = supabaseBrowser();
   // orçamentos antigos: modelo e campos da proposta completa com os valores da empresa
@@ -56,6 +59,7 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
   const [toastMsg, setToastMsg] = useState<{ msg: string; desfazer?: () => void } | null>(null);
   const [pdfStatus, setPdfStatus] = useState('');
   const [envio, setEnvio] = useState('');
+  const [pub, setPub] = useState<Publicada | null>(null);
   const ctl = useRef<AbortController | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -280,7 +284,33 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
     if (e2 || !data?.signedUrl) throw e2 || new Error('sem link');
     return data.signedUrl;
   }
-  function textoEnvio(link: string) {
+  // Página da proposta para o cliente (Pro e Premium): guarda uma cópia do que é enviado e devolve o link.
+  const lerPublicada = useCallback(async () => {
+    const { data } = await sb.from('propostas').select('token, vistas, vista_em, aceite_nome, aceite_em, aceite_nota').eq('orcamento_id', orcId).maybeSingle();
+    setPub((data as Publicada) || null);
+    return (data as Publicada) || null;
+  }, [sb, orcId]);
+  useEffect(() => { if (pagina && S.step === 'pdf') lerPublicada(); }, [pagina, S.step, lerPublicada]);
+  async function publicar(): Promise<string> {
+    const atual = await lerPublicada();
+    if (atual?.aceite_em) throw new Error('ja_aceite');
+    const { bytes } = await gerarPDF(await dadosPDF());
+    const path = `${userId}/${orcId}/proposta.pdf`;
+    const up = await sb.storage.from('propostas').upload(path, new Blob([bytes as BlobPart], { type: 'application/pdf' }), { contentType: 'application/pdf', upsert: true });
+    if (up.error) throw up.error;
+    const token = atual?.token || gerarToken();
+    const { error } = await sb.from('propostas').upsert({ token, orcamento_id: orcId, dados: instantaneo(S, empresa), pdf_path: path, publicada_em: new Date().toISOString() }, { onConflict: 'orcamento_id' });
+    if (error) throw error;
+    await lerPublicada();
+    return `${window.location.origin}/p/${token}`;
+  }
+  async function publicarAlteracoes() {
+    setEnvio('A atualizar a página da proposta…');
+    try { await publicar(); setEnvio('Página da proposta atualizada com a versão atual.'); }
+    catch (e) { setEnvio((e as Error)?.message === 'ja_aceite' ? 'Esta proposta já foi aceite: para mudar alguma coisa, duplique o orçamento e envie uma nova versão.' : 'Não foi possível atualizar a página. Tente de novo.'); }
+  }
+
+  function textoEnvio(link: string, ePagina = false) {
     const t = totais(S.orc, empresa);
     const titulo = (S.orc?.titulo || descObra(S.pedido.tipo)).toLowerCase();
     const nome = (S.pedido.dono || '').trim().split(/\s+/)[0];
@@ -290,7 +320,7 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
       'Fico ao dispor para qualquer esclarecimento e para marcar a visita técnica.',
       `Com os melhores cumprimentos,\n${empresa.assinante || empresa.nome}${empresa.assinante && empresa.nome ? '\n' + empresa.nome : ''}${empresa.telefone ? '\n' + empresa.telefone : ''}`
     ].join('\n\n');
-    return `${base}\n\nProposta em PDF: ${link}`;
+    return `${base}\n\n${ePagina ? 'Pode ver a proposta, descarregar o PDF e aceitá-la aqui' : 'Proposta em PDF'}: ${link}`;
   }
   const telefoneWa = (t: string) => {
     let n = String(t || '').replace(/[^\d+]/g, '').replace(/^\+/, '').replace(/^00/, '');
@@ -303,7 +333,16 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
     const janela = via === 'whatsapp' ? window.open('', '_blank') : null;
     setEnvio('A preparar o envio…');
     try {
-      const texto = textoEnvio(await linkPDF());
+      let link = '', ePagina = false;
+      if (pagina) {
+        try { link = await publicar(); ePagina = true; }
+        catch (e) {
+          if ((e as Error)?.message === 'ja_aceite') throw e;
+          // base de dados sem a página da proposta (migração 0006): envia o PDF
+          console.warn('página da proposta', e);
+        }
+      }
+      const texto = textoEnvio(link || await linkPDF(), ePagina);
       if (via === 'whatsapp') {
         const url = `https://wa.me/${telefoneWa(S.pedido.telefone || '')}?text=${encodeURIComponent(texto)}`;
         if (janela) janela.location.href = url; else window.location.href = url;
@@ -312,12 +351,14 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
         window.location.href = `mailto:${encodeURIComponent(S.pedido.email || '')}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(texto)}`;
       }
       upd((d) => { d.meta.enviado = `${new Date().toISOString()}|${via}`; });
-      setEnvio(via === 'whatsapp' ? 'WhatsApp aberto com a mensagem e o link do PDF: confirme e envie.' : 'Email aberto com a mensagem e o link do PDF: confirme e envie.');
+      const oque = ePagina ? 'o link da página da proposta' : 'o link do PDF';
+      setEnvio(via === 'whatsapp' ? `WhatsApp aberto com a mensagem e ${oque}: confirme e envie.` : `Email aberto com a mensagem e ${oque}: confirme e envie.`);
     } catch (e) {
       console.error('enviar', e);
       janela?.close();
       const semBucket = /bucket|not found/i.test(String((e as Error)?.message || ''));
-      setEnvio(semBucket ? 'Falta atualizar a base de dados (migração 0003 no Supabase) para enviar por link. Entretanto use “Partilhar PDF” ou “Descarregar PDF”.' : 'Não foi possível preparar o envio. Tente de novo.');
+      setEnvio((e as Error)?.message === 'ja_aceite' ? 'Esta proposta já foi aceite: para enviar uma nova versão, duplique o orçamento.'
+        : semBucket ? 'Falta atualizar a base de dados (migração 0003 no Supabase) para enviar por link. Entretanto use “Partilhar PDF” ou “Descarregar PDF”.' : 'Não foi possível preparar o envio. Tente de novo.');
     }
   }
   const enviadoTxt = (() => {
@@ -556,8 +597,19 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
             <button className="btn primary grow" onClick={() => enviar('whatsapp')}>{ICON.whatsapp} Enviar por WhatsApp</button>
             <button className="btn grow" onClick={() => enviar('email')}>{ICON.email} Enviar por email</button>
           </div>
-          {envio ? <p className={'sh-f small ' + (/Falta|Não foi/.test(envio) ? 'erro' : 'muted')} role="status">{envio}</p> : null}
-          <p className="sh-f small muted">Abre a conversa ou o email já com a mensagem abaixo e um link seguro para o PDF, válido durante a validade da proposta. Só envia quando confirmar na aplicação.</p>
+          {envio ? <p className={'sh-f small ' + (/Falta|Não foi|já foi aceite/.test(envio) ? 'erro' : 'muted')} role="status">{envio}</p> : null}
+          {pub?.aceite_em ? (
+            <div className="sh-f"><div className="callout ok-box"><strong>Aceite por {pub.aceite_nome} a {fmtData(new Date(pub.aceite_em))} às {pad(new Date(pub.aceite_em).getHours())}:{pad(new Date(pub.aceite_em).getMinutes())}</strong>{pub.aceite_nota ? <span className="small">Nota do cliente: {pub.aceite_nota}</span> : null}</div></div>
+          ) : null}
+          {pub ? (
+            <div className="sh-f pub-estado small">
+              <span>{pub.vistas ? `Aberta pelo cliente ${pub.vistas === 1 ? '1 vez' : `${pub.vistas} vezes`} (primeira a ${fmtData(new Date(pub.vista_em!))})` : 'Ainda não foi aberta pelo cliente.'}</span>
+              <span className="row"><a className="link" href={`/p/${pub.token}`} target="_blank" rel="noopener">Ver a página da proposta</a>{pub.aceite_em ? null : <button className="link" onClick={publicarAlteracoes}>Atualizar com esta versão</button>}</span>
+            </div>
+          ) : null}
+          <p className="sh-f small muted">{pagina
+            ? 'Abre a conversa ou o email já com a mensagem abaixo e o link da página da proposta, com a sua marca: o cliente vê os trabalhos, descarrega o PDF e pode aceitar a proposta. Só envia quando confirmar na aplicação.'
+            : 'Abre a conversa ou o email já com a mensagem abaixo e um link seguro para o PDF, válido durante a validade da proposta. Só envia quando confirmar na aplicação.'}</p>
         </section>
         <section className="sheet">
           <div className="sh-h"><span className="lab" id="lab-msg">Mensagem</span><button className="link" onClick={escreverMensagem}>{S.mensagem ? 'Escrever outra' : 'Escrever com a IA'}</button></div>

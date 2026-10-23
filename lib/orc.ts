@@ -14,7 +14,11 @@ export type Empresa = {
   seguro_apolice: string; seguro_validade: string; garantia_texto: string;
   pag_adjudicacao: number; pag_inicio: number; pag_conclusao: number;
   modelo: Modelo; mostrar_precos: MostrarPrecos; prefixo: string;
+  // espaço personalizado
+  cor2: string; estilo: Estilo; apresentacao: string; condicoes_texto: string; questionario: Questionario;
 };
+export type Estilo = 'classico' | 'moderno' | 'sobrio';
+export type Questionario = Partial<Record<'anos' | 'zona' | 'especialidades' | 'diferenca' | 'equipa' | 'tom' | 'garantia' | 'condicoes', string>>;
 export type Modelo = 'rapido' | 'completo';
 export type MostrarPrecos = 'capitulo' | 'detalhado';
 export type ItemPreco = { descricao: string; unidade: string; preco: number | null };
@@ -62,7 +66,8 @@ export const EMPRESA_VAZIA: Empresa = {
   nome: '', nif: '', telefone: '', email: '', site: '', morada: '', alvara: '', seguro: '', cor: '#1F3F8F', logo_path: null,
   iva: 23, validade: 30, imprevistos: 0, pagamento: '', prazo: '', garantia: '', nunca_inclui: '', extras: '', rodape: true, precos: [],
   slogan: '', assinante: '', banco: '', iban: '', bic: '', seguro_apolice: '', seguro_validade: '', garantia_texto: '',
-  pag_adjudicacao: 20, pag_inicio: 40, pag_conclusao: 40, modelo: 'completo', mostrar_precos: 'capitulo', prefixo: ''
+  pag_adjudicacao: 20, pag_inicio: 40, pag_conclusao: 40, modelo: 'completo', mostrar_precos: 'capitulo', prefixo: '',
+  cor2: '', estilo: 'classico', apresentacao: '', condicoes_texto: '', questionario: {}
 };
 
 export const novoEstado = (): Estado => ({

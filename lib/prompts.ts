@@ -1,6 +1,6 @@
 import 'server-only';
 // Prompts do orçamentista, herdados do protótipo. Só correm no servidor.
-import type { Empresa, Estado, Modelo, Orc } from './orc';
+import type { Empresa, Estado, Modelo, Orc, Questionario } from './orc';
 import { ivaPadrao, totais, validadePadrao } from './orc';
 import { fmtEUR, fmtN, num } from './util';
 
@@ -31,7 +31,8 @@ function contextoEmpresa(e: Empresa) {
     `IVA padrão: ${ivaPadrao(e)}%`,
     e.nunca_inclui ? `Nunca incluído nas propostas: ${e.nunca_inclui}` : '',
     e.extras ? `Deslocação e entulho: ${e.extras}` : '',
-    e.prazo ? `Prazo habitual: ${e.prazo}` : ''
+    e.prazo ? `Prazo habitual: ${e.prazo}` : '',
+    e.apresentacao ? `Sobre a empresa (texto do profissional; serve só para acertar o tom da carta, sem o copiar): ${e.apresentacao.slice(0, 1200)}` : ''
   ].filter(Boolean).join('\n');
 }
 
@@ -144,4 +145,45 @@ export function promptMensagem(S: Pick<Estado, 'pedido' | 'meta' | 'orc'>, e: Em
   const val = Math.round(num(S.meta.validade)) || validadePadrao(e);
   return `Escreve uma mensagem curta de WhatsApp, em português de Portugal, de ${e.nome || 'a empresa'} para ${S.pedido.dono || 'o dono de obra'}, a acompanhar a proposta de orçamento em PDF (proposta n.º ${S.meta.numero}, ${S.pedido.tipo || 'obra'}${S.pedido.localidade ? ' em ' + S.pedido.localidade : ''}).
 Tom cordial e profissional, 4 a 6 linhas, sem emojis. Diz o total estimado com IVA (${fmtEUR(t.total)}), que os valores são estimativas a confirmar na visita técnica, que a proposta é válida por ${val} dias e convida a marcar a visita. Não acrescentes outros números, datas ou condições. Responde só com o texto da mensagem.`;
+}
+
+/* ---------- 5. textos da marca (espaço personalizado) ---------- */
+const TONS: Record<string, string> = {
+  proximo: 'próximo e de confiança, como uma empresa familiar que trata cada casa como se fosse a sua',
+  tecnico: 'técnico e rigoroso, focado em método, materiais e cumprimento de prazos',
+  premium: 'cuidado e exigente, para clientes que valorizam acabamentos e acompanhamento',
+};
+export function promptTextos(q: Questionario, e: Empresa) {
+  const r = (k: keyof Questionario) => String(q[k] || '').trim().slice(0, 600);
+  return [
+    `Escreve os textos fixos das propostas da empresa ${e.nome || '(sem nome)'}, de obras e remodelação em Portugal. Vão aparecer em todas as propostas enviadas aos clientes.`,
+    '',
+    'REGRAS',
+    '1. Português de Portugal, frases claras, sem jargão de marketing nem exclamações.',
+    '2. Usa SÓ os factos das respostas abaixo. Não inventes anos, números, prémios, certificações, clientes, garantias nem promessas que não estejam nas respostas. Se faltar um dado, escreve sem ele.',
+    `3. Tom: ${TONS[r('tom')] || TONS.proximo}.`,
+    '4. "apresentacao": texto "Sobre a empresa", 2 parágrafos curtos (no máximo 90 palavras no total), na 1.ª pessoa do plural ("fazemos", "acompanhamos").',
+    '5. "condicoes": condições gerais em 3 a 6 frases curtas, uma por linha (separadas por \\n), sobre o que o profissional indicou (pagamentos, prazos, materiais, limpeza, licenças, alterações). Não repitas percentagens de pagamento nem IVA (já aparecem noutro sítio).',
+    '6. "garantia": 1 ou 2 frases sobre o que a garantia cobre, só com o que foi indicado. Se não houver garantia indicada, devolve "".',
+    '7. "slogan": uma frase curta (até 8 palavras), sem ponto de exclamação. Se o profissional já tiver slogan, devolve "".',
+    '',
+    'Responde só com JSON neste formato:',
+    '{"apresentacao":"...","condicoes":"...\\n...","garantia":"...","slogan":"..."}',
+    '',
+    'DADOS DA EMPRESA',
+    `Nome: ${e.nome || '-'}`,
+    e.slogan ? `Slogan atual: ${e.slogan}` : 'Slogan atual: (nenhum)',
+    e.garantia ? `Garantia: ${e.garantia}` : '',
+    e.seguro ? `Seguro de responsabilidade civil: ${e.seguro}` : '',
+    e.alvara ? `Alvará/registo: ${e.alvara}` : '',
+    '',
+    'RESPOSTAS DO PROFISSIONAL',
+    `Anos de experiência: ${r('anos') || '(não indicado)'}`,
+    `Zona onde trabalha: ${r('zona') || '(não indicado)'}`,
+    `Trabalhos que faz mais: ${r('especialidades') || '(não indicado)'}`,
+    `O que o distingue: ${r('diferenca') || '(não indicado)'}`,
+    `Quem executa os trabalhos: ${r('equipa') || '(não indicado)'}`,
+    `Garantia (o que cobre): ${r('garantia') || '(não indicado)'}`,
+    `Condições que quer deixar claras: ${r('condicoes') || '(não indicado)'}`,
+  ].filter((x) => x !== '').join('\n');
 }

@@ -3,6 +3,7 @@ import Editor from '@/components/Editor';
 import Topo from '@/components/Topo';
 import { lerEmpresa } from '@/lib/empresa';
 import { novoEstado, type Estado } from '@/lib/orc';
+import { marcaDaConta } from '@/lib/marca-app';
 import { lerAcesso } from '@/lib/plano';
 import { exigirUtilizador } from '@/lib/supabase/server';
 
@@ -19,11 +20,12 @@ export default async function OrcamentoPage({ params }: { params: Promise<{ id: 
   ]);
   if (!orc) notFound();
   const empresa = lerEmpresa(emp);
+  const marca = await marcaDaConta(sb, acesso, emp);
   const estado: Estado = { ...novoEstado(), ...(orc.dados as Partial<Estado>) };
   return (
     <div className="wrap" id="app">
-      <Topo empresa={empresa.nome} atual="orcamentos" />
-      <Editor orcId={orc.id} userId={userId} inicial={estado} empresa={empresa} premium={acesso.completa} />
+      <Topo empresa={empresa.nome} atual="orcamentos" marca={marca} />
+      <Editor orcId={orc.id} userId={userId} inicial={estado} empresa={empresa} premium={acesso.completa} pagina={acesso.marca} />
     </div>
   );
 }

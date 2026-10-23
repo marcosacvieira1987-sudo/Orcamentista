@@ -15,6 +15,9 @@ export function lerEmpresa(row: Record<string, unknown> | null | undefined): Emp
   for (const k of ['pag_adjudicacao', 'pag_inicio', 'pag_conclusao'] as const) e[k] = Math.min(100, Math.max(0, num(e[k])));
   e.modelo = e.modelo === 'rapido' ? 'rapido' : 'completo';
   e.mostrar_precos = e.mostrar_precos === 'detalhado' ? 'detalhado' : 'capitulo';
+  e.estilo = e.estilo === 'moderno' || e.estilo === 'sobrio' ? e.estilo : 'classico';
+  e.cor2 = /^#[0-9a-f]{6}$/i.test(e.cor2) ? e.cor2 : '';
+  e.questionario = e.questionario && typeof e.questionario === 'object' && !Array.isArray(e.questionario) ? e.questionario : {};
   e.precos = Array.isArray(r.precos) ? (r.precos as Record<string, unknown>[]).map(lerPreco) : [];
   return e;
 }

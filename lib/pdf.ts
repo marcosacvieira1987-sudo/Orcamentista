@@ -355,6 +355,7 @@ async function rapido(b: Base, d: DadosPDF) {
   if (d.meta.prazo) paragrafo(`Prazo indicativo: ${d.meta.prazo}.`, { depois: 0 });
   paragrafo(`Validade da proposta: ${val} dias, até ${fmtData(fim)}.`, { depois: 12 });
   caixaAviso();
+  if (e.apresentacao.trim()) { subtitulo(`Sobre ${e.nome ? 'a ' + e.nome : 'nós'}`); paragrafo(e.apresentacao.trim().replace(/\n{2,}/g, '\n'), { depois: 8 }); }
 
   // 02 Descrição dos trabalhos
   titulo(2, 'Descrição dos trabalhos');
@@ -388,6 +389,7 @@ async function rapido(b: Base, d: DadosPDF) {
     ['Seguro', textoSeguroCompleto(e)],
     ['IVA', taxas.length ? `Taxa${taxas.length > 1 ? 's' : ''} de ${taxas.join(' e ')}, incluída${taxas.length > 1 ? 's' : ''} no total com IVA.` : ''],
     ['Deslocação e entulho', e.extras || ''],
+    ['Condições gerais', e.condicoes_texto || ''],
     ['Alvará ou registo', e.alvara || '']
   ]);
 
@@ -563,6 +565,7 @@ async function completo(b: Base, d: DadosPDF) {
     'Valor global fechado para os trabalhos descritos: nenhum trabalho extra avança sem a sua aprovação.',
     variasFases ? `Pagamentos repartidos pelas ${fases.length} fases, ao ritmo da obra.` : ''
   ].filter(Boolean);
+  if (e.apresentacao.trim()) { subtitulo(`Sobre ${e.nome ? 'a ' + e.nome : 'nós'}`); paragrafo(e.apresentacao.trim().replace(/\n{2,}/g, '\n'), { depois: 8 }); }
   subtitulo('O que garantimos');
   marcadores(garantias);
   precisa(100); // despedida e assinatura sempre juntas
@@ -723,6 +726,7 @@ async function completo(b: Base, d: DadosPDF) {
     ['A confirmar', d.orc.a_confirmar],
     ['Deslocação e entulho', e.extras || ''],
     ['Trabalhos extra', 'Trabalhos não descritos ou imprevistos são orçamentados à parte e só avançam depois de aprovados.'],
+    ['Condições gerais', e.condicoes_texto || ''],
     ['Validade', `${val} dias, até ${fmtData(fim)}.`],
     ['Alvará ou registo', e.alvara || '']
   ]);

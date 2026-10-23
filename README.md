@@ -22,6 +22,8 @@ Orçamentos de obras a partir de fotos. O profissional fotografa a obra, respond
 | Duplicar orçamento (com cópia das fotos) | `app/orcamentos/[id]/duplicar/route.ts` |
 | Numeração sequencial por empresa (ex.: MMGS-2026-001) | `supabase/migrations/0002_proposta_completa.sql` |
 | Subscrições Stripe: Essencial, Pro e Premium, mensal ou anual, preço de lançamento por datas e para a beta, limite mensal de orçamentos com IA com contador, 14 dias grátis, garantia de 30 dias, configuração automática do Stripe. Regras em [`docs/decisoes.md`](docs/decisoes.md) | `lib/planos.ts`, `lib/plano.ts`, `lib/stripe.ts`, `app/api/pagamentos/*`, `app/planos` |
+| Espaço personalizado (Pro e Premium): cores tiradas do logótipo, 3 modelos de apresentação, textos da marca pela IA a partir de um questionário (com limite mensal), marca no app | `lib/cores.ts`, `lib/modelos.ts`, `app/api/textos`, `components/ConfigForm.tsx`, `lib/marca-app.ts` |
+| Página da proposta para o cliente (`/p/<token>`): cópia do que foi enviado, PDF, "Aceitar proposta" com nome e data, registo de visitas, aviso no app e por email (Resend, opcional) | `components/PropostaCliente.tsx`, `app/p`, `lib/proposta.ts`, `lib/avisos.ts` |
 | Termos de utilização, privacidade e Livro de Reclamações; titular do serviço em `lib/site.ts` | `app/termos`, `app/privacidade`, `components/Titular.tsx` |
 | Instalar no telemóvel (ícone no ecrã principal) | `app/manifest.ts`, `public/icones`, `app/apple-icon.png` |
 | RGPD: isolamento por conta, exportar dados, apagar conta | `supabase/migrations`, `app/api/conta`, `app/privacidade` |
@@ -50,6 +52,7 @@ A lógica, os prompts e o desenho vêm do protótipo `Orçamentista` (HTML únic
    - `supabase/migrations/0003_propostas_enviadas.sql` — PDFs enviados por link (WhatsApp e email).
    - `supabase/migrations/0004_assinaturas.sql` — subscrições e período experimental (ver [`docs/pagamentos.md`](docs/pagamentos.md)).
    - `supabase/migrations/0005_planos_lancamento.sql` — plano Essencial, período mensal/anual, preço de lançamento e garantia.
+   - `supabase/migrations/0006_espaco_personalizado.sql` — marca, textos, modelo de apresentação e página da proposta para o cliente.
 3. *Authentication → URL Configuration*:
    - **Site URL**: o endereço da app (ex.: `https://prumo.vercel.app`).
    - **Redirect URLs**: `https://prumo.vercel.app/auth/confirmar` (e `http://localhost:3000/auth/confirmar` para desenvolvimento).
@@ -76,7 +79,7 @@ npm install
 npx supabase start            # Supabase local (Docker); aplica a migração
 # copie para .env.local o URL e as chaves que o comando mostra, e a sua ANTHROPIC_API_KEY
 npm run dev
-node scripts/testar-rls.mjs   # 28 verificações de isolamento entre contas
+node scripts/testar-rls.mjs   # 34 verificações de isolamento entre contas
 ```
 
 ## Depois do MVP
