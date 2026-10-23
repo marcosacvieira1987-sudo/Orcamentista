@@ -112,7 +112,7 @@ async function preparar(d: DadosPDF) {
     [F, FB, FI] = await Promise.all([pdf.embedFont(StandardFonts.Helvetica), pdf.embedFont(StandardFonts.HelveticaBold), pdf.embedFont(StandardFonts.HelveticaOblique)]);
   }
   const cor = (h: string, def = '101315') => { const m = /^#?([0-9a-f]{6})$/i.exec(String(h || '').trim()); const v = m ? m[1] : def; return [parseInt(v.slice(0, 2), 16) / 255, parseInt(v.slice(2, 4), 16) / 255, parseInt(v.slice(4, 6), 16) / 255]; };
-  const [br, bg, bb] = cor(d.empresa.cor, '1F3F8F');
+  const [br, bg, bb] = cor(d.empresa.cor, '2B2A28');
   const tom = (k: number) => rgb(br + (1 - br) * k, bg + (1 - bg) * k, bb + (1 - bb) * k);
   // cor da marca muito escura (ex.: preto): sobre fundo escuro usa-se um tom claro, para se ler
   const escura = 0.2126 * br + 0.7152 * bg + 0.0722 * bb < 0.3;

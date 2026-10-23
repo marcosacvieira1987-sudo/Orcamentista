@@ -2,3 +2,4 @@
 export const PRODUTO = 'Prumo Orçamentista';
 export const PRODUTO_CURTO = 'Prumo';
 export const SLOGAN = 'Orçamentos a partir de fotos';
+export const ASSINATURA = 'Prumo, por MMGS';

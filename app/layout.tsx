@@ -3,7 +3,7 @@ import { PRODUTO, SLOGAN } from '@/lib/marca';
 import './globals.css';
 
 export const metadata: Metadata = { title: PRODUTO, description: SLOGAN, appleWebApp: { capable: true, title: 'Prumo', statusBarStyle: 'default' } };
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#F2F3F0' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#F6F2EA' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

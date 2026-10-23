@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from 'next/link';
-import { PRODUTO, PRODUTO_CURTO } from '@/lib/marca';
+import { ASSINATURA, PRODUTO, PRODUTO_CURTO } from '@/lib/marca';
 import { fmtDataLisboa as fmtData, fmtPreco, janelaLancamento, lancamentoAberto, PLANOS } from '@/lib/planos';
 import { SITE } from '@/lib/site';
 import './landing.css';
@@ -24,7 +24,7 @@ const Icone = ({ n, s = 22 }: { n: string; s?: number }) => (
 );
 
 export default function Landing() {
-  const { hero, factos, passos, montra, funcoes, planos, notaPlanos, perguntas, final, negocio, contacto } = SITE;
+  const { hero, factos, passos, montra, funcoes, planos, notaPlanos, perguntas, final, negocio, contacto, video } = SITE;
   // durante o lançamento mostra o preço de lançamento (nunca como desconto)
   const lanc = lancamentoAberto();
   const tarifa = lanc ? 'lancamento' : 'normal';
@@ -34,7 +34,7 @@ export default function Landing() {
       <header className="lp-nav">
         <div className="lp-in lp-nav-in">
           <Link href="/" className="lp-logo" aria-label={PRODUTO}>
-            <span className="lp-prumo" aria-hidden="true" />{PRODUTO_CURTO}
+            <span className="lp-prumo" aria-hidden="true" /><span>{PRODUTO_CURTO}<span className="lp-assina">por MMGS</span></span>
           </Link>
           <nav aria-label="Secções" className="lp-links">
             <a href="#como">Como funciona</a>
@@ -49,7 +49,8 @@ export default function Landing() {
       </header>
 
       <main>
-        <section className="lp-hero">
+        <section className={'lp-hero' + (video.mp4 ? ' com-video' : '')}>
+          {video.mp4 ? <video className="lp-video" autoPlay muted loop playsInline preload="metadata" poster={video.poster || undefined} aria-hidden="true"><source src={video.mp4} type="video/mp4" /></video> : null}
           <div className="lp-in">
             <p className="lp-eyebrow">{hero.eyebrow}</p>
             <h1>{hero.titulo.map((l, i) => <span key={i} className={i ? 'lp-hl' : undefined}>{l}</span>)}</h1>
@@ -57,6 +58,9 @@ export default function Landing() {
             <div className="lp-ctas">
               <Link href="/registar" className="lp-btn lp-btn-lg">{hero.cta}<Icone n="seta" s={18} /></Link>
               <a href="#proposta" className="lp-btn lp-btn-lg lp-btn-ghost">{hero.secundario}</a>
+            </div>
+            <div className="lp-factos" aria-label="Em números">
+              {factos.map((f) => <div key={f.rotulo}><strong>{f.valor}</strong><span>{f.rotulo}</span></div>)}
             </div>
           </div>
           <div className="lp-leque" aria-hidden="true">
@@ -66,11 +70,6 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="lp-factos" aria-label="Em números">
-          <div className="lp-in lp-factos-in">
-            {factos.map((f) => <div key={f.rotulo}><strong>{f.valor}</strong><span>{f.rotulo}</span></div>)}
-          </div>
-        </section>
 
         <section id="como" className="lp-sec">
           <div className="lp-in">
@@ -179,7 +178,7 @@ export default function Landing() {
 
       <footer className="lp-pe">
         <div className="lp-in lp-pe-in">
-          <span className="lp-logo"><span className="lp-prumo" aria-hidden="true" />{PRODUTO}</span>
+          <span className="lp-logo"><span className="lp-prumo" aria-hidden="true" /><span>{PRODUTO}<span className="lp-assina">{ASSINATURA}</span></span></span>
           <nav aria-label="Rodapé">
             <Link href="/entrar">Entrar</Link>
             <Link href="/registar">Criar conta</Link>

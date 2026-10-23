@@ -63,7 +63,7 @@ export type Estado = {
 };
 
 export const EMPRESA_VAZIA: Empresa = {
-  nome: '', nif: '', telefone: '', email: '', site: '', morada: '', alvara: '', seguro: '', cor: '#1F3F8F', logo_path: null,
+  nome: '', nif: '', telefone: '', email: '', site: '', morada: '', alvara: '', seguro: '', cor: '#2B2A28', logo_path: null,
   iva: 23, validade: 30, imprevistos: 0, pagamento: '', prazo: '', garantia: '', nunca_inclui: '', extras: '', rodape: true, precos: [],
   slogan: '', assinante: '', banco: '', iban: '', bic: '', seguro_apolice: '', seguro_validade: '', garantia_texto: '',
   pag_adjudicacao: 20, pag_inicio: 40, pag_conclusao: 40, modelo: 'completo', mostrar_precos: 'capitulo', prefixo: '',

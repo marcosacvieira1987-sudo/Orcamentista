@@ -60,6 +60,8 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
     <div className="wrap wrap-planos">
       <Topo empresa={emp?.nome} atual="planos" marca={marca} />
       <main>
+        <div className="planos-palco">
+        {SITE.video.mp4 ? <video className="auth-video" autoPlay muted loop playsInline preload="metadata" poster={SITE.video.poster || undefined} aria-hidden="true"><source src={SITE.video.mp4} type="video/mp4" /></video> : null}
         <section className="intro"><span className="eyebrow">Subscrição</span><h1>O seu plano</h1></section>
         {pago ? <p className="callout ok-box" role="status"><strong>Pagamento recebido. Obrigado!</strong> O plano já está ativo.</p> : null}
         {q.mudou ? <p className="callout ok-box" role="status"><strong>Plano alterado.</strong> A diferença foi acertada na fatura.</p> : null}
@@ -76,6 +78,8 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
             <form action="/api/pagamentos/portal" method="post"><button className="btn sm">{subscrito ? 'Pagamento, faturas e cancelamento' : 'Ver faturas anteriores'}</button></form>
           ) : null}
         </section>
+
+        </div>
 
         {tarifa === 'lancamento' && !subscrito ? (
           <p className="callout lanc"><strong>Preço de lançamento{beta ? ' para colegas da beta' : ''}</strong><span className="small">{beta ? 'Sem prazo para aderir, e o 1.º mês é grátis.' : `À venda até ${fmtData(fimLanc)}.`} Fica com este preço nas renovações enquanto não cancelar.</span></p>

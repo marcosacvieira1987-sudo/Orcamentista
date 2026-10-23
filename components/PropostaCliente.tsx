@@ -30,7 +30,7 @@ export default function PropostaCliente({ snap, token, logoUrl, pdfUrl, fotoUrls
   const fases = completa ? resumoFases(o, e) : [];
   const variasFases = fases.length > 1;
   const pagamentos = planoPagamentos(o, e);
-  const marca = corLegivel(e.cor || '#1F3F8F');
+  const marca = corLegivel(e.cor || '#2B2A28');
   const estilo = e.estilo || 'classico';
   const titulo = o.titulo || maiuscula(descObra(snap.pedido.tipo));
   const naoIncl = semIva(o.nao_incluido.length ? o.nao_incluido : String(e.nunca_inclui || '').split(/[;\n]+/).map((x) => x.trim()).filter(Boolean));

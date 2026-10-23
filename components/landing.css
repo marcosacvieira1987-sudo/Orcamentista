@@ -1,7 +1,9 @@
-/* Página de apresentação. Cores fixas (não segue o tema escuro do app): grafite, azulejo e um amarelo de chamada. */
+/* Página de apresentação. Paleta da MMGS: grafite #2B2A28, bronze #A47B4F (claro #B9915F sobre escuro), off-white #F4EFE6, stone #A7A39B.
+   Conceito "A Linha": um fio de prumo atravessa a página e marca cada secção. Vidro e brilho só aqui. */
 .lp{
-  --lp-noite:#0B0E10;--lp-noite-2:#161B1F;--lp-tinta:#101315;--lp-cinza:#5B6268;--lp-filete:#DDE0DB;--lp-cal:#F2F3F0;
-  --lp-azul:#1F3F8F;--lp-azul-vivo:#3B66E0;--lp-sol:#FFC23D;--lp-sol-2:#FFD36E;
+  --lp-noite:#1E1D1B;--lp-noite-2:#2B2A28;--lp-tinta:#2B2A28;--lp-cinza:#5F5B54;--lp-filete:#E2DBCE;--lp-cal:#F4EFE6;
+  /* "azul" e "sol" ficaram como nomes: bronze escuro (texto sobre claro) e bronze claro (sobre escuro) */
+  --lp-azul:#7E5D39;--lp-azul-vivo:#A47B4F;--lp-sol:#B9915F;--lp-sol-2:#CBA674;--lp-stone:#A7A39B;
   background:#fff;color:var(--lp-tinta);overflow-x:clip;
 }
 .lp main{display:block}
@@ -17,7 +19,7 @@
 
 /* botões */
 .lp-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 22px;border-radius:999px;border:0;background:var(--lp-sol);color:var(--lp-noite)!important;font:650 16px/1 var(--sans);text-decoration:none;white-space:nowrap;transition:transform .15s ease,background .15s ease,box-shadow .15s ease;-webkit-tap-highlight-color:transparent}
-.lp-btn:hover{background:var(--lp-sol-2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(255,194,61,.28)}
+.lp-btn:hover{background:var(--lp-sol-2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(185,145,95,.35)}
 .lp-btn:active{transform:none}
 .lp-btn-lg{min-height:56px;padding:0 28px;font-size:17px}
 .lp-btn-sm{min-height:40px;padding:0 16px;font-size:14px}
@@ -30,7 +32,7 @@
 .lp-link{display:inline-block;margin-top:14px;font-size:15px;font-weight:550;color:var(--lp-azul)!important;text-underline-offset:3px}
 
 /* navegação */
-.lp-nav{position:sticky;top:0;z-index:20;background:rgba(11,14,16,.78);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid rgba(255,255,255,.08);color:#fff}
+.lp-nav{position:sticky;top:0;z-index:20;background:rgba(30,29,27,.72);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid rgba(255,255,255,.08);color:#fff}
 .lp-nav-in{display:flex;align-items:center;justify-content:space-between;gap:16px;height:60px}
 .lp-logo{display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:19px;letter-spacing:.02em;text-decoration:none}
 .lp-prumo{position:relative;width:14px;height:22px;flex:none}
@@ -44,10 +46,10 @@
 .lp-entrar:hover{opacity:1}
 
 /* hero */
-.lp-hero{position:relative;background:radial-gradient(120% 70% at 85% 0%,#1B2C5C 0%,rgba(27,44,92,0) 60%),var(--lp-noite);color:#fff;padding:56px 0 0;overflow:hidden}
+.lp-hero{position:relative;background:radial-gradient(120% 70% at 85% 0%,#4A3A28 0%,rgba(74,58,40,0) 60%),var(--lp-noite);color:#fff;padding:56px 0 0;overflow:hidden}
 .lp-hero h1{font-size:clamp(44px,11.5vw,104px);line-height:.98;letter-spacing:-.045em;font-weight:700;max-width:12ch}
 .lp-hero h1 span{display:block}
-.lp-hl{background:linear-gradient(92deg,var(--lp-sol) 0%,#FF9F43 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lp-hl{background:linear-gradient(92deg,var(--lp-sol) 0%,#E6CDA6 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
 .lp-hero-txt{font-size:clamp(17px,2.4vw,21px);line-height:1.5;color:rgba(255,255,255,.78);max-width:52ch;margin-top:24px;text-wrap:pretty}
 .lp-ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
 .lp-leque{position:relative;height:clamp(300px,82vw,560px);margin-top:48px;max-width:1120px;margin-left:auto;margin-right:auto}
@@ -59,10 +61,6 @@
 .lp-hero:hover .lp-folha.f3{transform:translateX(28%) rotate(12deg)}
 
 /* factos */
-.lp-factos{background:var(--lp-sol);color:var(--lp-noite)}
-.lp-factos-in{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 16px;padding-top:28px;padding-bottom:28px}
-.lp-factos strong{display:block;font-size:clamp(34px,7vw,52px);line-height:1;letter-spacing:-.03em;font-weight:750}
-.lp-factos span{display:block;margin-top:6px;font-size:14px;line-height:1.35;font-weight:550}
 
 /* secções */
 .lp-sec{padding:88px 0}
@@ -78,10 +76,7 @@
 .lp-passos p,.lp-funcao p{margin-top:8px;font-size:16px;line-height:1.5;color:var(--lp-cinza)}
 
 /* montra (faixa azulejo) */
-.lp-azulejo{color:#fff;background-color:var(--lp-azul);background-image:
-  linear-gradient(45deg,rgba(255,255,255,.05) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.05) 75%),
-  linear-gradient(45deg,rgba(255,255,255,.05) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.05) 75%);
-  background-size:56px 56px;background-position:0 0,28px 28px}
+.lp-azulejo{color:#fff;background-color:var(--lp-noite-2);background-image:repeating-linear-gradient(90deg,rgba(185,145,95,.10) 0 1px,transparent 1px 72px)}
 .lp-azulejo .lp-eyebrow{color:var(--lp-sol)}
 .lp-montra{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;padding:48px max(20px,calc((100vw - 1080px) / 2)) 16px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.4) transparent;outline-offset:-4px}
 .lp-montra figure{flex:none;margin:0;width:clamp(230px,62vw,300px);scroll-snap-align:center}
@@ -126,7 +121,7 @@
 .lp-faq details p{padding:0 0 22px;color:var(--lp-cinza);font-size:16px;max-width:60ch}
 
 /* chamada final e rodapé */
-.lp-final{background:linear-gradient(135deg,var(--lp-azul) 0%,#142A63 100%);color:#fff;padding:96px 0;text-align:center}
+.lp-final{background:radial-gradient(90% 120% at 50% 0%,#5A4630 0%,rgba(90,70,48,0) 70%),var(--lp-noite);color:#fff;padding:96px 0;text-align:center}
 .lp-final h2{margin:0 auto 32px;max-width:16ch}
 .lp-pe{background:var(--lp-noite);color:rgba(255,255,255,.7);padding:40px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:14px}
 .lp-pe-in{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px}
@@ -145,7 +140,6 @@
 @media (prefers-reduced-motion:reduce){.lp-folha,.lp-btn,.lp-montra img{transition:none}}
 
 @media (min-width:640px){
-  .lp-factos-in{grid-template-columns:repeat(4,minmax(0,1fr))}
   .lp-funcoes{grid-template-columns:repeat(2,minmax(0,1fr))}
   .lp-planos{grid-template-columns:repeat(2,minmax(0,1fr))}
   .lp-plano{padding:40px 32px}
@@ -169,3 +163,34 @@
 .lp-lanc{margin-top:24px;padding:14px 18px;border-radius:14px;background:var(--lp-noite);color:#fff;max-width:640px}
 .lp-lanc strong{color:var(--lp-sol)}
 @media (min-width:960px){.lp-planos{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* ---------- "A Linha": o fio de prumo que liga as secções ---------- */
+.lp main{position:relative;--linha-x:8px}
+.lp main::before{content:"";position:absolute;top:0;bottom:0;left:var(--linha-x);width:1px;background:linear-gradient(var(--lp-sol),rgba(185,145,95,.35) 30%,rgba(185,145,95,.35) 80%,var(--lp-sol));z-index:3;pointer-events:none}
+.lp-sec .lp-eyebrow,.lp-hero .lp-eyebrow{position:relative}
+.lp-sec .lp-eyebrow::before,.lp-hero .lp-eyebrow::before{content:"";position:absolute;top:50%;left:calc(var(--linha-x) - 20px - 4px);width:9px;height:9px;margin-top:-5px;border-radius:50%;background:var(--lp-sol);box-shadow:0 0 0 4px rgba(185,145,95,.18)}
+.lp-sec .lp-eyebrow::after{content:"";position:absolute;top:50%;left:calc(var(--linha-x) - 20px + 5px);width:10px;height:1px;background:var(--lp-sol)}
+@media (min-width:880px){
+  .lp main{--linha-x:max(14px,calc(50% - 560px + 14px))}
+  .lp-sec .lp-eyebrow::before,.lp-hero .lp-eyebrow::before{left:-23px}
+  .lp-sec .lp-eyebrow::after{left:-14px;width:12px}
+}
+@media (max-width:879px){.lp-sec .lp-eyebrow::before,.lp-hero .lp-eyebrow::before{left:-16px}.lp-sec .lp-eyebrow::after{display:none}}
+
+/* ---------- vídeo do hero (quando existir) e vidro ---------- */
+.lp-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:.55}
+.lp-hero.com-video::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(30,29,27,.35),rgba(30,29,27,.85) 75%);z-index:0}
+.lp-hero > *{position:relative;z-index:1}
+.lp-hero .lp-video{position:absolute}
+.lp-factos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 16px;margin-top:40px;padding:20px 22px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(185,145,95,.32);box-shadow:inset 0 1px 0 rgba(255,255,255,.08);max-width:760px}
+@supports (backdrop-filter:blur(1px)){.lp-factos{backdrop-filter:saturate(160%) blur(16px);-webkit-backdrop-filter:saturate(160%) blur(16px)}}
+.lp-factos strong{display:block;color:var(--lp-sol);font-size:clamp(28px,6vw,40px);line-height:1;letter-spacing:-.03em;font-weight:750}
+.lp-factos span{display:block;margin-top:6px;font-size:13px;line-height:1.35;color:rgba(255,255,255,.75)}
+@media (min-width:640px){.lp-factos{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.lp-ic{background:#F4EFE6;color:var(--lp-azul)}
+.lp-n{background:var(--lp-noite-2);color:var(--lp-sol)}
+.lp-passos li{background:var(--lp-cal)}
+.lp-cinza{background:var(--lp-cal)}
+.lp-plano-top{background:linear-gradient(160deg,#34322F,#1E1D1B);border-color:rgba(185,145,95,.45);box-shadow:0 30px 60px rgba(30,29,27,.28),inset 0 1px 0 rgba(255,255,255,.08)}
+.lp-selo{background:var(--lp-sol);color:var(--lp-noite)}
+.lp-assina{display:block;font:500 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--lp-stone);margin-top:3px}

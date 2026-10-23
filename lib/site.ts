@@ -119,6 +119,9 @@ export const SITE = {
   final: { titulo: 'O próximo orçamento pode estar pronto hoje.', cta: 'Começar agora' },
   // Outros negócios: preencher quando houver os dados. Com null, a secção não aparece.
   negocio: null as Negocio | null,
+  // Vídeo do hero (sem texto; os textos ficam por cima, em código). Pôr o ficheiro em public/landing/
+  // e indicar aqui o caminho, ex.: { mp4: '/landing/hero.mp4', poster: '/landing/hero.jpg' }. Vazio: sem vídeo.
+  video: { mp4: '', poster: '' },
   // Email ou página de contacto público. Vazio: não aparece no rodapé.
   contacto: 'mmgs.geral@gmail.com',
   // Quem vende o serviço (aparece nos termos e na privacidade). Preencher antes de cobrar.

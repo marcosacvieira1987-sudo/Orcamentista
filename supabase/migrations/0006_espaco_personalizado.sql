@@ -8,6 +8,9 @@ alter table public.empresas
   add column if not exists condicoes_texto text not null default '',          -- condições gerais
   add column if not exists questionario   jsonb not null default '{}'::jsonb; -- respostas usadas para escrever os textos
 
+-- cor por omissão das contas novas: grafite neutro (antes era o azul do protótipo)
+alter table public.empresas alter column cor set default '#2B2A28';
+
 alter table public.empresas drop constraint if exists empresas_estilo_check;
 alter table public.empresas add constraint empresas_estilo_check check (estilo in ('classico', 'moderno', 'sobrio'));
 

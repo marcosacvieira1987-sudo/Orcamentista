@@ -2,12 +2,13 @@
 Atelier: chão de cal, folhas brancas com filetes, tinta grafite e um só acento (azulejo).
    Uma régua de cotas marca o passo; rótulos, medidas e números em mono. No computador, a revisão abre em duas colunas. */
 :root{
-  --bg:#F2F3F0;--surface:#FFFFFF;--surface-2:#F7F8F6;--ink:#101315;--muted:#5B6268;--hair:#DDE0DB;--hair-2:#C9CDC8;--tick:#8B918C;
-  --accent:#1F3F8F;--accent-ink:#FFFFFF;
+  /* paleta Prumo (MMGS): off-white quente, grafite e bronze; sempre claro e com bom contraste */
+  --bg:#F6F2EA;--surface:#FFFFFF;--surface-2:#FAF7F1;--ink:#22211F;--muted:#5F5B54;--hair:#E4DDD0;--hair-2:#CFC6B6;--tick:#A7A39B;
+  --accent:#7E5D39;--accent-ink:#FFFFFF;
   --ok:#1D7A4E;--warn:#9A6206;--warn-soft:#F6EEDD;--crit:#B3261E;
   --pend-bg:#FBF0EE;--pend-line:#E8D6D2;--pend-seg:#F0CFCA;--track:#E2C5C0;
-  --off-bg:#B8C1D6;--off-ink:#FFFFFF;--hatch-a:#E2E5E0;--hatch-b:#ECEEEA;
-  --on-bg:#101315;--on-ink:#FFFFFF;
+  --off-bg:#D8CDBB;--off-ink:#FFFFFF;--hatch-a:#EAE3D7;--hatch-b:#F1ECE3;
+  --on-bg:#22211F;--on-ink:#FFFFFF;
   --shadow:0 1px 2px rgba(16,19,21,.08),0 14px 32px rgba(16,19,21,.12);
   --sans:"Instrument Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
   --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -571,3 +572,25 @@ a{color:inherit}
 .cartao.aceite{box-shadow:inset 3px 0 0 var(--ok)}
 .aceites{gap:8px}
 .aceites a{display:flex;flex-direction:column;text-decoration:none}
+
+/* ecrãs de entrada: grafite, vídeo (quando existir), cartão de vidro e o fio de prumo */
+.auth-palco{position:relative;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px 16px calc(32px + env(safe-area-inset-bottom,0px));background:radial-gradient(90% 60% at 80% 0%,#4A3A28 0%,rgba(74,58,40,0) 60%),#1E1D1B;overflow:hidden}
+.auth-palco::before{content:"";position:absolute;top:0;bottom:0;left:max(16px,calc(50% - 260px));width:1px;background:linear-gradient(#B9915F,rgba(185,145,95,.25) 40%,rgba(185,145,95,.25));pointer-events:none}
+.auth-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.45}
+.auth-palco .auth{position:relative;z-index:1;width:100%;max-width:440px;margin:0;padding:28px 22px 22px;border-radius:24px;background:rgba(255,253,249,.9);border:1px solid rgba(255,255,255,.55);box-shadow:0 30px 80px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.7)}
+@supports (backdrop-filter:blur(1px)){.auth-palco .auth{background:rgba(255,253,249,.82);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%)}}
+.auth-palco .auth .intro{padding-top:0}
+.auth-assina{position:relative;z-index:1;font:500 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:#A7A39B}
+.auth-prumo::after{background:#B9915F}
+
+/* ecrã de planos: faixa grafite com o estado em vidro */
+.planos-palco{position:relative;display:flex;flex-direction:column;gap:12px;padding:22px 18px 18px;border-radius:24px;background:radial-gradient(90% 80% at 85% 0%,#4A3A28 0%,rgba(74,58,40,0) 60%),#1E1D1B;color:#F4EFE6;overflow:hidden}
+.planos-palco > *{position:relative;z-index:1}
+.planos-palco .auth-video{z-index:0}
+.planos-palco .intro{padding-top:0;margin:0}
+.planos-palco .eyebrow{color:#B9915F}
+.planos-palco .callout{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#F4EFE6;box-shadow:inset 3px 0 0 #B9915F}
+.planos-palco .callout.crit{box-shadow:inset 3px 0 0 #F0938A}
+.planos-palco .callout.warn{box-shadow:inset 3px 0 0 #E2B25E}
+.planos-palco .muted{color:rgba(244,239,230,.72)}
+@supports (backdrop-filter:blur(1px)){.planos-palco .callout{backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%)}}

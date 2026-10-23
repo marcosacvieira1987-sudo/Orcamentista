@@ -83,7 +83,7 @@ export default function ConfigForm({ inicial, userId, email, marca }: { inicial:
     out.pag_inicio = Math.min(100, Math.max(0, num(e.pag_inicio)));
     out.pag_conclusao = Math.min(100, Math.max(0, num(e.pag_conclusao)));
     out.prefixo = e.prefixo.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
-    out.cor = /^#[0-9a-f]{6}$/i.test(e.cor) ? e.cor : '#1F3F8F';
+    out.cor = /^#[0-9a-f]{6}$/i.test(e.cor) ? e.cor : '#2B2A28';
     out.cor2 = /^#[0-9a-f]{6}$/i.test(e.cor2) ? e.cor2 : '';
     out.questionario = Object.fromEntries(Object.entries(q).map(([k, v]) => [k, String(v || '').trim()]).filter(([, v]) => v));
     out.logo_path = logoPath;
@@ -222,7 +222,7 @@ export default function ConfigForm({ inicial, userId, email, marca }: { inicial:
     window.location.href = '/entrar';
   }
 
-  const cor = /^#[0-9a-f]{6}$/i.test(e.cor || '') ? e.cor : '#1F3F8F';
+  const cor = /^#[0-9a-f]{6}$/i.test(e.cor || '') ? e.cor : '#2B2A28';
   const mudarP = (i: number, k: keyof LinhaP, v: string) => { setPrecos((ps) => ps.map((p, j) => (j === i ? { ...p, [k]: v } : p))); setSujo(true); };
 
   return (

@@ -2,6 +2,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { ASSINATURA } from '@/lib/marca';
+import { SITE } from '@/lib/site';
 import { supabaseBrowser } from '@/lib/supabase/client';
 
 type Modo = 'entrar' | 'registar' | 'recuperar' | 'nova';
@@ -76,6 +78,8 @@ export default function AuthForm({ modo, aviso }: { modo: Modo; aviso?: string }
   }
 
   return (
+    <div className="auth-palco">
+      {SITE.video.mp4 ? <video className="auth-video" autoPlay muted loop playsInline preload="metadata" poster={SITE.video.poster || undefined} aria-hidden="true"><source src={SITE.video.mp4} type="video/mp4" /></video> : null}
     <main className="auth">
       <section className="intro"><Link href="/" className="auth-marca" aria-label="Página inicial do Prumo"><span className="auth-prumo" aria-hidden="true" />Prumo</Link><h1>{titulo}</h1><p className="lead">{lead}</p></section>
       <form onSubmit={submeter} noValidate>
@@ -101,5 +105,7 @@ export default function AuthForm({ modo, aviso }: { modo: Modo; aviso?: string }
         {modo === 'entrar' ? <><Link href="/registar">Criar conta</Link> · <Link href="/recuperar">Esqueci-me da palavra-passe</Link></> : <Link href="/entrar">Já tenho conta: entrar</Link>}
       </p>
     </main>
+      <p className="auth-assina">{ASSINATURA}</p>
+    </div>
   );
 }

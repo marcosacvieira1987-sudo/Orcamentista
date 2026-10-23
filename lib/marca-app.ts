@@ -9,7 +9,7 @@ export type MarcaApp = { cor: string; ink: string; logoUrl: string } | null;
 // A cor é escurecida até se ler bem sobre branco (botões e ligações legíveis ao sol).
 export async function marcaDaConta(sb: SupabaseClient, acesso: Acesso, emp: { cor?: string | null; logo_path?: string | null } | null): Promise<MarcaApp> {
   if (!acesso.marca || !emp) return null;
-  const cor = corLegivel(/^#[0-9a-f]{6}$/i.test(emp.cor || '') ? emp.cor! : '#1F3F8F');
+  const cor = corLegivel(/^#[0-9a-f]{6}$/i.test(emp.cor || '') ? emp.cor! : '#2B2A28');
   let logoUrl = '';
   if (emp.logo_path) {
     const { data } = await sb.storage.from('logos').createSignedUrl(emp.logo_path, 3600);

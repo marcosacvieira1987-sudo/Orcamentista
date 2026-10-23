@@ -11,8 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: '/orcamentos',
     scope: '/',
     display: 'standalone',
-    background_color: '#F2F3F0',
-    theme_color: '#1F3F8F',
+    background_color: '#F6F2EA',
+    theme_color: '#2B2A28',
     icons: [
       { src: '/icones/icone-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: '/icones/icone-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

@@ -20,7 +20,7 @@ const saturacao = ([r, g, b]: RGB) => { const mx = Math.max(r, g, b), mn = Math.
 
 // Escurece a cor até ter contraste suficiente com o fundo (texto e botões legíveis, também ao sol).
 export function corLegivel(hex: string, fundo = '#FFFFFF', minimo = 4.5) {
-  if (!/^#[0-9a-f]{6}$/i.test(hex)) return '#1F3F8F';
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return '#2B2A28';
   let rgb = hexParaRgb(hex);
   for (let i = 0; i < 40 && contraste(rgbParaHex(rgb), fundo) < minimo; i++) rgb = rgb.map((v) => v * 0.92) as RGB;
   return rgbParaHex(rgb);
@@ -58,7 +58,7 @@ export function paletaDePixeis(px: ArrayLike<number>, max = 5): string[] {
 // Sugestão: principal = a cor mais presente que se lê sobre branco; secundária = a seguinte.
 // Guarda-se a cor verdadeira; o app escurece-a só onde precisa de contraste (corLegivel).
 export function sugerirCores(paleta: string[]) {
-  if (!paleta.length) return { cor: '#1F3F8F', cor2: '' };
+  if (!paleta.length) return { cor: '#2B2A28', cor2: '' };
   const principal = paleta.find((c) => contraste(c, '#FFFFFF') >= 3) || paleta[0];
   const segunda = paleta.find((c) => c !== principal) || '';
   return { cor: principal, cor2: segunda };

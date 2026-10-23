@@ -92,7 +92,7 @@ const { error: assIns } = await B.sb.from('assinaturas').insert({ user_id: B.id,
 ok(!!assIns, 'B não cria uma subscrição para si');
 
 // página da proposta: cada conta publica e lê as suas; sem sessão não se lê nada (o cliente entra pelo servidor)
-const tokA = 'a'.repeat(48);
+const tokA = [...crypto.getRandomValues(new Uint8Array(24))].map((x) => x.toString(16).padStart(2, '0')).join('');
 const { error: pubA } = await A.sb.from('propostas').insert({ token: tokA, orcamento_id: orcA.id, dados: { v: 1 } });
 ok(!pubA, 'A publica a página de uma proposta sua');
 const { data: pubB } = await B.sb.from('propostas').select('*').eq('token', tokA);

@@ -66,20 +66,41 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
   const upd = useCallback((fn: (d: Estado) => void) => setS((prev) => { const d = structuredClone(prev); fn(d); return d; }), []);
 
   /* ---------- guardar automaticamente ---------- */
+  // Grava 0,7 s depois da última alteração, nunca mais de 3 s depois da primeira por gravar, e logo nas mudanças
+  // importantes (passo, aprovação, envio). Ao sair da página ou mudar de app, grava o que estiver pendente.
   const primeira = useRef(true);
+  const pendente = useRef(false);
+  const pendenteDesde = useRef(0);
+  const urgente = useRef(false);
+  const ultimo = useRef(S);
+  ultimo.current = S;
+  const gravar = useCallback(async () => {
+    pendente.current = false; pendenteDesde.current = 0;
+    const E = ultimo.current;
+    const total = E.orc && linhas(E.orc).length ? totais(E.orc, empresa).total : null;
+    const { error } = await sb.from('orcamentos').update({
+      dados: E, estado: E.aprovado ? 'aprovado' : 'rascunho', numero: E.meta.numero, tipo: E.pedido.tipo,
+      localidade: E.pedido.localidade, dono: E.pedido.dono, total
+    }).eq('id', orcId);
+    setGravacao(error ? 'erro' : 'guardado');
+  }, [sb, orcId, empresa]);
   useEffect(() => {
     if (primeira.current) { primeira.current = false; return; }
     setGravacao('a guardar');
-    const t = setTimeout(async () => {
-      const total = S.orc && linhas(S.orc).length ? totais(S.orc, empresa).total : null;
-      const { error } = await sb.from('orcamentos').update({
-        dados: S, estado: S.aprovado ? 'aprovado' : 'rascunho', numero: S.meta.numero, tipo: S.pedido.tipo,
-        localidade: S.pedido.localidade, dono: S.pedido.dono, total
-      }).eq('id', orcId);
-      setGravacao(error ? 'erro' : 'guardado');
-    }, 700);
+    pendente.current = true;
+    if (!pendenteDesde.current) pendenteDesde.current = Date.now();
+    const espera = urgente.current || Date.now() - pendenteDesde.current > 3000 ? 0 : 700;
+    urgente.current = false;
+    const t = setTimeout(gravar, espera);
     return () => clearTimeout(t);
-  }, [S, sb, orcId, empresa]);
+  }, [S, gravar]);
+  useEffect(() => {
+    const agora = () => { if (pendente.current) gravar(); };
+    const escondida = () => { if (document.visibilityState === 'hidden') agora(); };
+    window.addEventListener('pagehide', agora);
+    document.addEventListener('visibilitychange', escondida);
+    return () => { window.removeEventListener('pagehide', agora); document.removeEventListener('visibilitychange', escondida); agora(); };
+  }, [gravar]);
 
   /* ---------- miniaturas (links assinados, 1 hora) ---------- */
   useEffect(() => {
@@ -98,7 +119,7 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
     toastTimer.current = setTimeout(() => setToastMsg(null), desfazer ? 7000 : 4000);
   }, []);
 
-  const go = (step: Passo) => { setErro(null); upd((d) => { d.step = step; }); window.scrollTo({ top: 0 }); };
+  const go = (step: Passo) => { setErro(null); urgente.current = true; upd((d) => { d.step = step; }); window.scrollTo({ top: 0 }); };
   const disponivel = (s: Passo) => ({ pedido: true, leitura: !!S.leitura, perguntas: !!S.perguntas, medidas: !!S.medidas, revisao: !!S.orc, pdf: !!S.orc && S.aprovado })[s];
 
   /* ---------- chamadas à IA (rota /api/ia, no servidor) ---------- */
@@ -350,6 +371,7 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
         const assunto = `Proposta n.º ${S.meta.numero} - ${S.orc.titulo || maiuscula(descObra(S.pedido.tipo))} - ${empresa.nome}`;
         window.location.href = `mailto:${encodeURIComponent(S.pedido.email || '')}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(texto)}`;
       }
+      urgente.current = true;
       upd((d) => { d.meta.enviado = `${new Date().toISOString()}|${via}`; });
       const oque = ePagina ? 'o link da página da proposta' : 'o link do PDF';
       setEnvio(via === 'whatsapp' ? `WhatsApp aberto com a mensagem e ${oque}: confirme e envie.` : `Email aberto com a mensagem e ${oque}: confirme e envie.`);
@@ -556,7 +578,7 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
     const dataP = deIso(S.meta.data || isoHoje());
     const val = Math.round(num(S.meta.validade)) || validadePadrao(e);
     const fim = new Date(dataP); fim.setDate(fim.getDate() + val);
-    const cor = /^#[0-9a-f]{6}$/i.test(e.cor || '') ? e.cor : '#1F3F8F';
+    const cor = /^#[0-9a-f]{6}$/i.test(e.cor || '') ? e.cor : '#2B2A28';
     const foto = S.fotos.find((f) => urls[f.path]);
     const contactos = [e.telefone, e.email].filter(Boolean).join(' · ');
     const legais = [e.nif ? 'NIF ' + e.nif : '', e.alvara ? 'Alvará/registo ' + e.alvara : '', e.seguro ? textoSeguro(e.seguro) : ''].filter(Boolean).join(' · ');
