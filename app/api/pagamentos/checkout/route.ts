@@ -29,7 +29,8 @@ export async function POST(req: Request) {
     if (!customer) {
       const c = await stripe().customers.create({ email: u.email, name: emp?.nome || undefined, preferred_locales: ['pt'], metadata: { user_id: u.id } });
       customer = c.id;
-      await admin.from('assinaturas').upsert({ user_id: u.id, stripe_customer: customer }, { onConflict: 'user_id' });
+      const { error } = await admin.from('assinaturas').upsert({ user_id: u.id, stripe_customer: customer }, { onConflict: 'user_id' });
+      if (error) throw error;
     }
     const origem = origemDoPedido(req);
     const taxa = process.env.STRIPE_TAXA_IVA;

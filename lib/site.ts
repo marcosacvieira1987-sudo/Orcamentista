@@ -103,4 +103,8 @@ export const SITE = {
   negocio: null as Negocio | null,
   // Email ou página de contacto público. Vazio: não aparece no rodapé.
   contacto: '',
+  // Quem vende o serviço (aparece nos termos e na privacidade). Preencher antes de cobrar.
+  titular: { nome: '', nif: '', morada: '', email: '' },
+  // obrigatório em Portugal para quem vende online
+  livroReclamacoes: 'https://www.livroreclamacoes.pt/Inicio/',
 };

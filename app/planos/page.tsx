@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import Topo from '@/components/Topo';
 import { lerAcesso, type Acesso } from '@/lib/plano';
 import { SITE } from '@/lib/site';
@@ -78,7 +79,7 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
             );
           })}
         </div>
-        <p className="small muted">Pagamento seguro pelo Stripe, com cartão ou débito direto. Indique o NIF da empresa no pagamento para a fatura. Pode mudar de plano ou cancelar a qualquer momento; o cancelamento tem efeito no fim do mês já pago.</p>
+        <p className="small muted">Pagamento seguro pelo Stripe, com cartão ou débito direto. Indique o NIF da empresa no pagamento para a fatura. Pode mudar de plano ou cancelar a qualquer momento; o cancelamento tem efeito no fim do mês já pago. Ao subscrever aceita os <Link href="/termos">termos de utilização</Link>.</p>
       </main>
     </div>
   );

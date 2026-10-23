@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { PRODUTO, SLOGAN } from '@/lib/marca';
 import './globals.css';
 
-export const metadata: Metadata = { title: PRODUTO, description: SLOGAN };
+export const metadata: Metadata = { title: PRODUTO, description: SLOGAN, appleWebApp: { capable: true, title: 'Prumo', statusBarStyle: 'default' } };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#F2F3F0' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

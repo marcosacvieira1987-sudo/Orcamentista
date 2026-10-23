@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { SUPABASE_KEY, SUPABASE_URL } from './lib/supabase/env';
 
-const PUBLICAS = ['/entrar', '/registar', '/recuperar', '/auth', '/privacidade'];
+const PUBLICAS = ['/entrar', '/registar', '/recuperar', '/auth', '/privacidade', '/termos', '/manifest.webmanifest', '/sitemap.xml'];
 
 // Renova a sessão em cada pedido e manda para /entrar quem não tem sessão.
 export async function proxy(request: NextRequest) {

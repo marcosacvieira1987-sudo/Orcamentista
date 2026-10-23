@@ -22,6 +22,8 @@ Orçamentos de obras a partir de fotos. O profissional fotografa a obra, respond
 | Duplicar orçamento (com cópia das fotos) | `app/orcamentos/[id]/duplicar/route.ts` |
 | Numeração sequencial por empresa (ex.: MMGS-2026-001) | `supabase/migrations/0002_proposta_completa.sql` |
 | Subscrições Stripe: 14 dias grátis, Pro (proposta rápida) e Premium (completa), pagamento, portal do cliente e webhook. A IA para sem plano | `lib/plano.ts`, `lib/stripe.ts`, `app/api/pagamentos/*`, `app/planos` |
+| Termos de utilização, privacidade e Livro de Reclamações; titular do serviço em `lib/site.ts` | `app/termos`, `app/privacidade`, `components/Titular.tsx` |
+| Instalar no telemóvel (ícone no ecrã principal) | `app/manifest.ts`, `public/icones`, `app/apple-icon.png` |
 | RGPD: isolamento por conta, exportar dados, apagar conta | `supabase/migrations`, `app/api/conta`, `app/privacidade` |
 
 A lógica, os prompts e o desenho vêm do protótipo `Orçamentista` (HTML único): os prompts estão iguais, a normalização das respostas e os cálculos foram passados para `lib/orc.ts`, o PDF para `lib/pdf.ts` e o CSS para `app/globals.css`.

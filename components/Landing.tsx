@@ -170,7 +170,9 @@ export default function Landing() {
           <nav aria-label="Rodapé">
             <Link href="/entrar">Entrar</Link>
             <Link href="/registar">Criar conta</Link>
+            <Link href="/termos">Termos</Link>
             <Link href="/privacidade">Privacidade</Link>
+            <a href={SITE.livroReclamacoes} target="_blank" rel="noopener">Livro de Reclamações</a>
             {contacto ? <a href={contacto.includes('@') ? `mailto:${contacto}` : contacto}>Contacto</a> : null}
           </nav>
           <p>© {new Date().getFullYear()} {PRODUTO}</p>

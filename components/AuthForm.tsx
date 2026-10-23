@@ -50,7 +50,7 @@ export default function AuthForm({ modo, aviso }: { modo: Modo; aviso?: string }
         router.replace('/orcamentos'); router.refresh(); return;
       }
       if (modo === 'registar') {
-        if (!aceito) { setErro('Para criar a conta, aceite a política de privacidade.'); return; }
+        if (!aceito) { setErro('Para criar a conta, aceite os termos e a política de privacidade.'); return; }
         if (pass.length < 8) { setErro('Use pelo menos 8 caracteres na palavra-passe.'); return; }
         const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { empresa: empresa.trim() }, emailRedirectTo: `${base}/auth/confirmar?next=/configuracao` } });
         if (error) throw error;
@@ -91,7 +91,7 @@ export default function AuthForm({ modo, aviso }: { modo: Modo; aviso?: string }
           ) : null}
         </section>
         {modo === 'registar' ? (
-          <label className="check"><input type="checkbox" checked={aceito} onChange={(e) => setAceito(e.target.checked)} /> <span>Li e aceito a <Link href="/privacidade" target="_blank">política de privacidade</Link>. As fotos e os dados dos orçamentos são só seus.</span></label>
+          <label className="check"><input type="checkbox" checked={aceito} onChange={(e) => setAceito(e.target.checked)} /> <span>Li e aceito os <Link href="/termos" target="_blank">termos de utilização</Link> e a <Link href="/privacidade" target="_blank">política de privacidade</Link>. As fotos e os dados dos orçamentos são só seus.</span></label>
         ) : null}
         {erro ? <p className="erro" role="alert">{erro}</p> : null}
         {ok ? <p className="ok-msg" role="status">{ok}</p> : null}
