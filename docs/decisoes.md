@@ -71,3 +71,22 @@ Atualizado a 23 out 2026. Fonte: documento "Prumo — Decisões do produto".
 3. Espaço personalizado: marca, cores do logótipo, 3 modelos, textos pela IA com limite, página da proposta com "Aceitar proposta".
 4. Site e design: paleta, vídeo do hero, app clara.
 5. Antes de abrir: domínio e email, revisão jurídica, Stripe em modo real e um teste completo, do registo ao pagamento.
+
+## Estado (23 out 2026)
+
+- **Fase 1, planos e lançamento:** feita. Falta o Stripe: criar a conta, pôr a chave no Vercel e carregar em "Criar o que falta no Stripe" na página Plano (ver `pagamentos.md`).
+- **Fase 2, faturação certificada:** à espera do contabilista (Moloni ligado ao Stripe).
+- **Fase 3, espaço personalizado:** feita. Inclui:
+  - as cores do logótipo e os 3 modelos de apresentação;
+  - os textos pela IA, com limite;
+  - a marca no app;
+  - a página da proposta com "Aceitar proposta".
+
+  Os avisos por email precisam de `RESEND_API_KEY` e `EMAIL_REMETENTE`; sem eles, o aviso aparece só no app.
+- **Fase 4, site e design:** feita, menos o vídeo. Quando houver vídeo, basta pô-lo em `public/landing/` e indicar o caminho em `lib/site.ts` (`video`).
+- **Fase 5, antes de abrir:** do lado do Marcos:
+  - domínio e email;
+  - revisão jurídica;
+  - Stripe em modo real;
+  - um teste completo, do registo ao pagamento.
+- **Base de dados de produção:** correr `supabase/atualizar-producao.sql` (0002 a 0006).

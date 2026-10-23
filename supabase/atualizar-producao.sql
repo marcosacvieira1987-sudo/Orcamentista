@@ -1,4 +1,4 @@
--- Atualização da base de dados de produção: migrações 0002 e 0003 numa só vez.
+-- Atualização da base de dados de produção: migrações 0002 a 0006 numa só vez.
 -- Seguro de repetir: o que já existir fica como está.
 -- Supabase → SQL Editor → New query → colar tudo → Run.
 
@@ -67,4 +67,101 @@ create policy "propostas: apagar as suas" on storage.objects for delete
 -- a API passa a ver as colunas novas de imediato
 notify pgrst, 'reload schema';
 
-select 'Base de dados atualizada' as resultado;
+-- ============ 0004: subscrições e período experimental ============
+-- Subscrições (Stripe). Seguro de repetir: pode colar tudo no SQL Editor do Supabase e correr.
+-- Cada conta tem uma linha: período experimental e o estado da subscrição, que só o servidor altera
+-- (webhook do Stripe com a chave secreta). O utilizador só consegue ler a sua.
+
+create table if not exists public.assinaturas (
+  user_id             uuid primary key references auth.users (id) on delete cascade,
+  experimental_ate    timestamptz not null default now() + interval '14 days',
+  plano               text check (plano in ('pro', 'premium')),
+  estado              text not null default '',   -- estado da subscrição no Stripe (active, past_due, canceled…)
+  periodo_fim         timestamptz,
+  cancela_no_fim      boolean not null default false,
+  stripe_customer     text unique,
+  stripe_subscription text unique,
+  atualizado_em       timestamptz not null default now()
+);
+
+alter table public.assinaturas enable row level security;
+drop policy if exists "assinatura: ler a sua" on public.assinaturas;
+create policy "assinatura: ler a sua" on public.assinaturas for select using ((select auth.uid()) = user_id);
+-- sem políticas de inserir, alterar ou apagar: ninguém muda o próprio plano a partir do browser
+
+-- contas novas: 14 dias de experiência com tudo incluído
+create or replace function public.criar_assinatura() returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  insert into public.assinaturas (user_id) values (new.id) on conflict (user_id) do nothing;
+  return new;
+end $$;
+drop trigger if exists ao_criar_utilizador_assinatura on auth.users;
+create trigger ao_criar_utilizador_assinatura after insert on auth.users for each row execute function public.criar_assinatura();
+
+-- contas que já existiam: 30 dias de aviso antes de precisarem de subscrição
+insert into public.assinaturas (user_id, experimental_ate)
+select id, now() + interval '30 days' from auth.users
+on conflict (user_id) do nothing;
+
+-- ============ 0005: planos, lançamento e garantia ============
+-- Plano Essencial, pagamento mensal ou anual, preço de lançamento e garantia de 30 dias.
+-- Seguro de repetir: pode colar tudo no SQL Editor do Supabase e correr.
+
+alter table public.assinaturas drop constraint if exists assinaturas_plano_check;
+alter table public.assinaturas add constraint assinaturas_plano_check check (plano in ('essencial', 'pro', 'premium'));
+
+alter table public.assinaturas
+  add column if not exists periodo         text check (periodo in ('mensal', 'anual')),
+  add column if not exists lancamento      boolean not null default false,  -- comprou ao preço de lançamento
+  add column if not exists primeira_compra timestamptz;                      -- garantia de 30 dias só na primeira compra
+
+-- ============ 0006: espaço personalizado e página da proposta ============
+-- Espaço personalizado: cores e textos da marca, modelo de apresentação e página da proposta para o cliente.
+-- Seguro de repetir: pode colar tudo no SQL Editor do Supabase e correr.
+
+alter table public.empresas
+  add column if not exists cor2           text  not null default '',          -- cor secundária (tirada do logótipo)
+  add column if not exists estilo         text  not null default 'classico',  -- modelo de apresentação
+  add column if not exists apresentacao   text  not null default '',          -- "Sobre a empresa"
+  add column if not exists condicoes_texto text not null default '',          -- condições gerais
+  add column if not exists questionario   jsonb not null default '{}'::jsonb; -- respostas usadas para escrever os textos
+
+-- cor por omissão das contas novas: grafite neutro (antes era o azul do protótipo)
+alter table public.empresas alter column cor set default '#2B2A28';
+
+alter table public.empresas drop constraint if exists empresas_estilo_check;
+alter table public.empresas add constraint empresas_estilo_check check (estilo in ('classico', 'moderno', 'sobrio'));
+
+-- Página da proposta que o cliente abre (uma por orçamento). Guarda uma cópia do que foi enviado,
+-- para o cliente ver e aceitar essa versão, mesmo que o orçamento seja alterado depois.
+create table if not exists public.propostas (
+  id           uuid primary key default gen_random_uuid(),
+  token        text not null unique check (length(token) >= 32),
+  user_id      uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  orcamento_id uuid not null unique references public.orcamentos (id) on delete cascade,
+  dados        jsonb not null,
+  pdf_path     text,
+  publicada_em timestamptz not null default now(),
+  vista_em     timestamptz,                     -- primeira vez que o cliente abriu
+  vistas       integer not null default 0,
+  aceite_nome  text,
+  aceite_em    timestamptz,
+  aceite_nota  text
+);
+create index if not exists propostas_user on public.propostas (user_id);
+
+alter table public.propostas enable row level security;
+drop policy if exists "propostas: ler as suas" on public.propostas;
+drop policy if exists "propostas: publicar" on public.propostas;
+drop policy if exists "propostas: atualizar" on public.propostas;
+drop policy if exists "propostas: apagar" on public.propostas;
+create policy "propostas: ler as suas" on public.propostas for select using ((select auth.uid()) = user_id);
+create policy "propostas: publicar" on public.propostas for insert with check ((select auth.uid()) = user_id);
+create policy "propostas: atualizar" on public.propostas for update using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+create policy "propostas: apagar" on public.propostas for delete using ((select auth.uid()) = user_id);
+-- O cliente não tem conta: a página e o "Aceitar" passam pelo servidor, que procura a proposta pelo token.
+
+-- a API passa a ver as colunas novas de imediato
+notify pgrst, 'reload schema';
+
+select 'Base de dados atualizada (0002 a 0006)' as resultado;
