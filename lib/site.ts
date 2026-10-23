@@ -1,13 +1,16 @@
 // Textos da página de apresentação (/) num só sítio, para mudar sem mexer no desenho.
 // Só se promete o que o app já faz. Os valores do exemplo são fictícios.
+// Nomes, preços e limites dos planos vêm de lib/planos.ts.
+import { LIMITE_EXPERIMENTAL, PLANOS, type PlanoId } from './planos';
+
+const ia = (p: PlanoId) => `${PLANOS[p].limite} orçamentos com IA por mês`;
 
 export type Plano = {
-  id: 'pro' | 'premium';
-  nome: string;
-  preco: number;
+  id: PlanoId;
   para: string;
-  destaque?: string;
+  selo?: string;
   inclui: string[];
+  emBreve?: string[];          // funções prometidas na fase seguinte: aparecem marcadas "em breve"
   exemplo: { href: string; rotulo: string };
 };
 
@@ -63,34 +66,47 @@ export const SITE = {
   ],
   planos: [
     {
-      id: 'pro', nome: 'Pro', preco: 59,
-      para: 'Para quem quer responder depressa.',
+      id: 'essencial',
+      para: 'Para começar a responder depressa.',
       inclui: [
         'Proposta rápida: resumo, mapa de quantidades e condições',
+        ia('essencial'),
         'Leitura das fotografias pela IA',
         'O seu preçário e a sua marca no PDF',
         'Envio por WhatsApp e email',
         'Ditado por voz',
-        'Numeração e duplicação de orçamentos',
       ],
+      emBreve: ['Modelos de apresentação prontos'],
       exemplo: { href: '/landing/exemplo-proposta-rapida.pdf', rotulo: 'Ver exemplo da proposta rápida' },
     },
     {
-      id: 'premium', nome: 'Premium', preco: 180, destaque: 'A proposta completa',
+      id: 'pro', selo: 'Mais popular',
+      para: 'Para quem orçamenta todas as semanas.',
+      inclui: [
+        'Tudo o que está no Essencial',
+        ia('pro'),
+        'Numeração e duplicação de orçamentos',
+      ],
+      emBreve: ['Espaço personalizado com a sua marca', `A IA escreve os textos da sua marca (até ${PLANOS.pro.textosIA} vezes por mês)`],
+      exemplo: { href: '/landing/exemplo-proposta-rapida.pdf', rotulo: 'Ver exemplo da proposta rápida' },
+    },
+    {
+      id: 'premium',
       para: 'Para quem quer ganhar a obra pela apresentação.',
       inclui: [
         'Tudo o que está no Pro',
-        'Capa institucional e carta de apresentação',
+        ia('premium'),
+        'Proposta completa: capa, carta de apresentação e capítulos',
         '"O que encontrámos" com as fotografias da obra',
-        'Capítulos com estado atual, trabalhos e não incluídos',
         'Execução por fases, com prazos e valores',
         'Plano de pagamentos, IBAN e folha de adjudicação',
         'Garantia e seguro em destaque',
       ],
+      emBreve: [`A IA escreve os textos da sua marca (até ${PLANOS.premium.textosIA} vezes por mês)`],
       exemplo: { href: '/landing/exemplo-proposta-completa.pdf', rotulo: 'Ver exemplo da proposta completa' },
     },
-  ] satisfies Plano[],
-  notaPlanos: 'Valores por mês, sem IVA. Os primeiros 14 dias são grátis, com tudo incluído e sem cartão. Depois escolhe o plano; pode mudar ou cancelar quando quiser.',
+  ] as Plano[],
+  notaPlanos: `Valores sem IVA. Pagamento mensal, ou anual com 2 meses oferecidos. Os primeiros 14 dias são grátis, sem cartão, com as funções do Premium e até ${LIMITE_EXPERIMENTAL} orçamentos com IA. Garantia de 30 dias na primeira compra: se não ficar satisfeito, devolvemos o valor.`,
   perguntas: [
     { p: 'Preciso de saber de informática?', r: 'Não. Se tira fotografias e envia mensagens no telemóvel, consegue usar. O app guia-o passo a passo.' },
     { p: 'Os preços são inventados pela IA?', r: 'Não. A IA usa o seu preçário. Quando um trabalho não está na tabela, fica assinalado para confirmar antes de enviar.' },

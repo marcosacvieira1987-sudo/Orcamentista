@@ -1,36 +1,64 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { ehIsento, LIMITE_EXPERIMENTAL, mesLisboa, PLANOS, type Periodo, type PlanoId } from './planos';
 
-// Quem pode usar o quê. Pro: proposta rápida. Premium: também a proposta completa.
-// Período experimental: tudo incluído. Sem plano: os orçamentos continuam abertos, mas a IA para.
-export type PlanoId = 'pro' | 'premium';
+export type { PlanoId } from './planos';
+
+// Quem pode usar o quê (catálogo em lib/planos.ts). Essencial e Pro: proposta rápida. Premium: também a completa.
+// Período experimental: funções do Premium com o limite do Essencial. Sem plano: os orçamentos ficam, a IA para.
 export type Acesso = {
   plano: PlanoId | null;
   via: 'subscricao' | 'experimental' | 'isento' | 'nenhum';
+  completa: boolean;
+  limite: number;               // orçamentos com IA por mês (Infinity: sem limite)
   diasExperimental: number;
   estado: string;
+  periodo: Periodo | null;
+  lancamento: boolean;
   periodoFim: string | null;
   cancelaNoFim: boolean;
+  primeiraCompra: string | null;
+  jaSubscreveu: boolean;        // já teve uma subscrição (a beta e a garantia só valem na primeira)
   cliente: boolean;
 };
 
 // estados do Stripe em que a subscrição ainda dá acesso (past_due: o Stripe está a tentar cobrar de novo)
 export const ESTADOS_ATIVOS = ['active', 'trialing', 'past_due'];
 
-// Contas com acesso total sem pagar (o dono do produto, parceiros). Emails separados por vírgulas.
-const isento = (email: string) =>
-  !!email && (process.env.CONTAS_ISENTAS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean).includes(email.toLowerCase());
+// Montagens completas do mesmo orçamento por mês: um orçamento não serve de "caixa" para vários.
+export const MONTAGENS_POR_ORCAMENTO = 5;
 
 export async function lerAcesso(sb: SupabaseClient, userId: string, email: string): Promise<Acesso> {
-  const base = { estado: '', periodoFim: null, cancelaNoFim: false, cliente: false, diasExperimental: 0 };
-  if (isento(email)) return { ...base, plano: 'premium', via: 'isento' };
+  const base = { estado: '', periodo: null, lancamento: false, periodoFim: null, cancelaNoFim: false, primeiraCompra: null, jaSubscreveu: false, cliente: false, diasExperimental: 0 };
+  const total: Acesso = { ...base, plano: 'premium', via: 'isento', completa: true, limite: Infinity };
+  if (ehIsento(email)) return total;
   const { data, error } = await sb.from('assinaturas').select('*').eq('user_id', userId).maybeSingle();
   // base de dados ainda sem a migração 0004: não bloqueia ninguém
-  if (error && /assinaturas|schema cache|does not exist/i.test(error.message)) return { ...base, plano: 'premium', via: 'isento' };
+  if (error && /assinaturas|schema cache|does not exist/i.test(error.message)) return total;
   const r = data || {};
-  const info = { estado: String(r.estado || ''), periodoFim: r.periodo_fim || null, cancelaNoFim: !!r.cancela_no_fim, cliente: !!r.stripe_customer };
-  const dias = r.experimental_ate ? Math.ceil((new Date(r.experimental_ate).getTime() - Date.now()) / 86400000) : 0;
-  if (r.plano && ESTADOS_ATIVOS.includes(info.estado)) return { ...info, plano: r.plano as PlanoId, via: 'subscricao', diasExperimental: Math.max(0, dias) };
-  if (dias > 0) return { ...info, plano: 'premium', via: 'experimental', diasExperimental: dias };
-  return { ...info, plano: null, via: 'nenhum', diasExperimental: 0 };
+  const info = {
+    estado: String(r.estado || ''), periodo: (r.periodo || null) as Periodo | null, lancamento: !!r.lancamento,
+    periodoFim: r.periodo_fim || null, cancelaNoFim: !!r.cancela_no_fim, primeiraCompra: r.primeira_compra || null,
+    jaSubscreveu: !!r.stripe_subscription, cliente: !!r.stripe_customer,
+  };
+  const dias = r.experimental_ate ? Math.max(0, Math.ceil((new Date(r.experimental_ate).getTime() - Date.now()) / 86400000)) : 0;
+  const plano = r.plano as PlanoId | null;
+  if (plano && PLANOS[plano] && ESTADOS_ATIVOS.includes(info.estado)) return { ...info, plano, via: 'subscricao', completa: PLANOS[plano].completa, limite: PLANOS[plano].limite, diasExperimental: dias };
+  if (dias > 0) return { ...info, plano: 'premium', via: 'experimental', completa: true, limite: LIMITE_EXPERIMENTAL, diasExperimental: dias };
+  return { ...info, plano: null, via: 'nenhum', completa: false, limite: 0, diasExperimental: 0 };
+}
+
+// Orçamentos em que a IA já trabalhou este mês (Lisboa). Ajustes ao mesmo orçamento não contam outra vez.
+// Só contam pedidos em que a IA respondeu (tokens > 0): uma falha não gasta o limite.
+export async function usoMensal(sb: SupabaseClient) {
+  const { inicio, seguinte } = mesLisboa();
+  const { data } = await sb.from('uso_ia').select('orcamento_id, acao').gte('criado_em', inicio.toISOString()).gt('tokens_in', 0).not('orcamento_id', 'is', null).limit(5000);
+  const ids = new Set<string>();
+  const montagens = new Map<string, number>();
+  for (const x of data || []) {
+    const id = String(x.orcamento_id);
+    ids.add(id);
+    if (x.acao === 'orcamento') montagens.set(id, (montagens.get(id) || 0) + 1);
+  }
+  return { usados: ids.size, ids, montagens, renova: seguinte };
 }

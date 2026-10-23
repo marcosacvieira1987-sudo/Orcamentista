@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import Topo from '@/components/Topo';
 import { descObra } from '@/lib/orc';
-import { lerAcesso } from '@/lib/plano';
+import { lerAcesso, usoMensal } from '@/lib/plano';
+import { fmtDataLisboa } from '@/lib/planos';
 import { exigirUtilizador } from '@/lib/supabase/server';
 import { fmtData, fmtEUR, maiuscula } from '@/lib/util';
 
@@ -17,11 +18,12 @@ function estadoDe(o: { estado: string; enviado: string | null }) {
 
 export default async function Orcamentos() {
   const { sb, id, email } = await exigirUtilizador();
-  const [{ data: emp }, { data: lista }, { data: usos }, acesso] = await Promise.all([
+  const [{ data: emp }, { data: lista }, { data: usos }, acesso, mes] = await Promise.all([
     sb.from('empresas').select('nome, precos, logo_path, telefone, email').maybeSingle(),
     sb.from('orcamentos').select('id, estado, numero, tipo, localidade, dono, total, atualizado_em, titulo:dados->orc->>titulo, enviado:dados->meta->>enviado').order('atualizado_em', { ascending: false }).limit(200),
     sb.from('uso_ia').select('orcamento_id, custo_usd').not('orcamento_id', 'is', null),
-    lerAcesso(sb, id, email)
+    lerAcesso(sb, id, email),
+    usoMensal(sb)
   ]);
   // custo de IA por orçamento (vazio enquanto a migração 0002 não estiver aplicada)
   const custo = new Map<string, number>();
@@ -56,6 +58,8 @@ export default async function Orcamentos() {
           <section className="callout crit"><strong>Sem plano ativo</strong><p className="small">Os seus orçamentos continuam disponíveis, mas a IA está em pausa.</p><div><Link className="btn primary sm" href="/planos">Escolher um plano</Link></div></section>
         ) : acesso.via === 'experimental' && acesso.diasExperimental <= 5 ? (
           <section className="callout warn"><strong>{acesso.diasExperimental === 1 ? 'Falta 1 dia' : `Faltam ${acesso.diasExperimental} dias`} do período experimental</strong><p className="small">Escolha um plano para continuar a usar a IA sem interrupções.</p><div><Link className="btn sm" href="/planos">Ver planos</Link></div></section>
+        ) : acesso.plano && mes.usados >= acesso.limite ? (
+          <section className="callout warn"><strong>Usou os {acesso.limite} orçamentos com IA deste mês</strong><p className="small">A IA volta a {fmtDataLisboa(mes.renova)}. Os orçamentos já começados continuam a funcionar. Para continuar já com orçamentos novos, suba de plano.</p><div><Link className="btn sm" href="/planos">Ver planos</Link></div></section>
         ) : acesso.via === 'subscricao' && acesso.estado === 'past_due' ? (
           <section className="callout crit"><strong>O último pagamento falhou</strong><p className="small">Atualize o cartão para não perder o acesso.</p><div><Link className="btn sm" href="/planos">Resolver</Link></div></section>
         ) : null}
@@ -81,6 +85,7 @@ export default async function Orcamentos() {
 
         {orcs.length ? (
           <section className="resumo-30" aria-label="Últimos 30 dias">
+            {acesso.plano ? <div className="r-ia"><strong className="num">{mes.usados}{Number.isFinite(acesso.limite) ? <small> de {acesso.limite}</small> : null}</strong><span>orçamentos com IA este mês</span>{Number.isFinite(acesso.limite) ? <i className="r-barra" aria-hidden="true"><b style={{ width: `${Math.min(100, (mes.usados / acesso.limite) * 100)}%` }} /></i> : null}</div> : null}
             <div><strong className="num">{recentes.length}</strong><span>orçamentos em 30 dias</span></div>
             <div><strong className="num">{enviados.length}</strong><span>enviados ao cliente</span></div>
             <div><strong className="num">{fmtEUR(valorEnviado).replace(/,\d\d €$/, ' €')}</strong><span>em propostas enviadas</span></div>

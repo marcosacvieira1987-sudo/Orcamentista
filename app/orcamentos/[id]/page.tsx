@@ -23,7 +23,7 @@ export default async function OrcamentoPage({ params }: { params: Promise<{ id: 
   return (
     <div className="wrap" id="app">
       <Topo empresa={empresa.nome} atual="orcamentos" />
-      <Editor orcId={orc.id} userId={userId} inicial={estado} empresa={empresa} premium={acesso.plano !== 'pro'} />
+      <Editor orcId={orc.id} userId={userId} inicial={estado} empresa={empresa} premium={acesso.completa} />
     </div>
   );
 }

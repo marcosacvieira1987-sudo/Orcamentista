@@ -21,7 +21,7 @@ Orçamentos de obras a partir de fotos. O profissional fotografa a obra, respond
 | Enviar por WhatsApp e email: mensagem preenchida e link seguro do PDF, válido durante a validade da proposta | `components/Editor.tsx` |
 | Duplicar orçamento (com cópia das fotos) | `app/orcamentos/[id]/duplicar/route.ts` |
 | Numeração sequencial por empresa (ex.: MMGS-2026-001) | `supabase/migrations/0002_proposta_completa.sql` |
-| Subscrições Stripe: 14 dias grátis, Pro (proposta rápida) e Premium (completa), pagamento, portal do cliente e webhook. A IA para sem plano | `lib/plano.ts`, `lib/stripe.ts`, `app/api/pagamentos/*`, `app/planos` |
+| Subscrições Stripe: Essencial, Pro e Premium, mensal ou anual, preço de lançamento por datas e para a beta, limite mensal de orçamentos com IA com contador, 14 dias grátis, garantia de 30 dias, configuração automática do Stripe. Regras em [`docs/decisoes.md`](docs/decisoes.md) | `lib/planos.ts`, `lib/plano.ts`, `lib/stripe.ts`, `app/api/pagamentos/*`, `app/planos` |
 | Termos de utilização, privacidade e Livro de Reclamações; titular do serviço em `lib/site.ts` | `app/termos`, `app/privacidade`, `components/Titular.tsx` |
 | Instalar no telemóvel (ícone no ecrã principal) | `app/manifest.ts`, `public/icones`, `app/apple-icon.png` |
 | RGPD: isolamento por conta, exportar dados, apagar conta | `supabase/migrations`, `app/api/conta`, `app/privacidade` |
@@ -49,6 +49,7 @@ A lógica, os prompts e o desenho vêm do protótipo `Orçamentista` (HTML únic
    - `supabase/migrations/0002_proposta_completa.sql` — proposta completa, numeração sequencial e custo da IA por orçamento.
    - `supabase/migrations/0003_propostas_enviadas.sql` — PDFs enviados por link (WhatsApp e email).
    - `supabase/migrations/0004_assinaturas.sql` — subscrições e período experimental (ver [`docs/pagamentos.md`](docs/pagamentos.md)).
+   - `supabase/migrations/0005_planos_lancamento.sql` — plano Essencial, período mensal/anual, preço de lançamento e garantia.
 3. *Authentication → URL Configuration*:
    - **Site URL**: o endereço da app (ex.: `https://prumo.vercel.app`).
    - **Redirect URLs**: `https://prumo.vercel.app/auth/confirmar` (e `http://localhost:3000/auth/confirmar` para desenvolvimento).
@@ -64,7 +65,7 @@ Copie `.env.example` para `.env.local` (local) e defina as mesmas no Vercel (*Se
 | `SUPABASE_SECRET_KEY` | Chave secreta (`sb_secret_…`, ou a antiga `service_role`). Para apagar contas e gravar as subscrições |
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) → API Keys |
 | `LIMITE_IA_DIA` | Opcional (80) |
-| `STRIPE_*`, `CONTAS_ISENTAS` | Pagamentos: passo a passo em [`docs/pagamentos.md`](docs/pagamentos.md) |
+| `STRIPE_*`, `CONTAS_ADMIN`, `CONTAS_ISENTAS`, `BETA_EMAILS`, `LANCAMENTO_*` | Pagamentos e lançamento: passo a passo em [`docs/pagamentos.md`](docs/pagamentos.md) |
 
 ### 3. Vercel
 Importe o repositório no Vercel. As funções correm em Frankfurt (`vercel.json`), junto da base de dados. A rota da IA pede até 300 s (`maxDuration`): o esboço do orçamento pode demorar 1–2 minutos.

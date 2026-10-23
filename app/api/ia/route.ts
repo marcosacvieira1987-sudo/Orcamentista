@@ -4,7 +4,7 @@ import { lerEmpresa } from '@/lib/empresa';
 import { ErroIA, perguntarClaude, perguntarJSON, type Uso } from '@/lib/ia';
 import { ivaPadrao, juntarLeituras, normOrc, normPerguntas, type Empresa, type Estado, type Modelo, type Orc } from '@/lib/orc';
 import { promptAjuste, promptLeitura, promptMensagem, promptOrcamento, promptPerguntas, type Contexto } from '@/lib/prompts';
-import { lerAcesso } from '@/lib/plano';
+import { lerAcesso, MONTAGENS_POR_ORCAMENTO, usoMensal } from '@/lib/plano';
 import { utilizadorAtual } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -27,10 +27,22 @@ export async function POST(req: Request) {
   let corpo: Corpo;
   try { corpo = await req.json(); } catch { return NextResponse.json({ code: 'invalid_request' }, { status: 400 }); }
 
+  // Cada pedido pertence a um orçamento da própria conta (é por orçamento que se conta o limite mensal).
+  const orcamentoId = typeof corpo.orcamentoId === 'string' && /^[0-9a-f-]{36}$/i.test(corpo.orcamentoId) ? corpo.orcamentoId : null;
+  if (!orcamentoId) return NextResponse.json({ code: 'invalid_request' }, { status: 400 });
+  const [acesso, mes, { data: dono }] = await Promise.all([
+    lerAcesso(u.sb, u.id, u.email),
+    usoMensal(u.sb),
+    u.sb.from('orcamentos').select('id').eq('id', orcamentoId).maybeSingle(),
+  ]);
+  if (!dono) return NextResponse.json({ code: 'invalid_request' }, { status: 400 });
+
   // Plano: sem plano ativo a IA para; a proposta completa é só do Premium.
-  const acesso = await lerAcesso(u.sb, u.id, u.email);
   if (!acesso.plano) return NextResponse.json({ code: 'sem_plano' }, { status: 402 });
-  if (acesso.plano === 'pro' && (corpo.acao === 'orcamento' || corpo.acao === 'ajuste') && corpo.modelo === 'completo') return NextResponse.json({ code: 'so_premium' }, { status: 403 });
+  if (!acesso.completa && (corpo.acao === 'orcamento' || corpo.acao === 'ajuste') && corpo.modelo === 'completo') return NextResponse.json({ code: 'so_premium' }, { status: 403 });
+  // Limite mensal: um orçamento novo para a IA só entra se ainda houver lugar este mês.
+  if (!mes.ids.has(orcamentoId) && mes.usados >= acesso.limite) return NextResponse.json({ code: 'limite_mensal', limite: acesso.limite, renova: mes.renova.toISOString() }, { status: 402 });
+  if (corpo.acao === 'orcamento' && (mes.montagens.get(orcamentoId) || 0) >= MONTAGENS_POR_ORCAMENTO) return NextResponse.json({ code: 'montagens' }, { status: 429 });
 
   // Limite diário por utilizador (controlo de custos). As linhas só podem ser lidas e acrescentadas.
   const desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
@@ -43,8 +55,6 @@ export async function POST(req: Request) {
   // Soma o consumo das chamadas deste pedido, para registar o custo ligado ao orçamento.
   const uso: Uso = { tokens_in: 0, tokens_out: 0, custo_usd: 0 };
   const onUso = (x: Uso) => { uso.tokens_in += x.tokens_in; uso.tokens_out += x.tokens_out; uso.custo_usd = Math.round((uso.custo_usd + x.custo_usd) * 10000) / 10000; };
-  const orcamentoId = typeof corpo.orcamentoId === 'string' && /^[0-9a-f-]{36}$/i.test(corpo.orcamentoId) ? corpo.orcamentoId : null;
-
   let resposta: NextResponse;
   try {
     resposta = NextResponse.json(await executar(corpo, u.sb, u.id, empresa, onUso));

@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from 'next/link';
 import { PRODUTO, PRODUTO_CURTO } from '@/lib/marca';
+import { fmtDataLisboa as fmtData, fmtPreco, janelaLancamento, lancamentoAberto, PLANOS } from '@/lib/planos';
 import { SITE } from '@/lib/site';
 import './landing.css';
 
@@ -24,6 +25,10 @@ const Icone = ({ n, s = 22 }: { n: string; s?: number }) => (
 
 export default function Landing() {
   const { hero, factos, passos, montra, funcoes, planos, notaPlanos, perguntas, final, negocio, contacto } = SITE;
+  // durante o lançamento mostra o preço de lançamento (nunca como desconto)
+  const lanc = lancamentoAberto();
+  const tarifa = lanc ? 'lancamento' : 'normal';
+  const completa = planos.find((p) => p.id === 'premium')!;
   return (
     <div className="lp">
       <header className="lp-nav">
@@ -95,7 +100,7 @@ export default function Landing() {
           </div>
           <div className="lp-in lp-montra-pe">
             <p>{montra.nota}</p>
-            <a href={planos[1].exemplo.href} target="_blank" rel="noopener" className="lp-btn lp-btn-claro">Abrir o PDF de exemplo<Icone n="seta" s={18} /></a>
+            <a href={completa.exemplo.href} target="_blank" rel="noopener" className="lp-btn lp-btn-claro">Abrir o PDF de exemplo<Icone n="seta" s={18} /></a>
           </div>
         </section>
 
@@ -115,18 +120,26 @@ export default function Landing() {
           <div className="lp-in">
             <p className="lp-eyebrow lp-azul">Planos</p>
             <h2>Escolha como quer apresentar-se.</h2>
+            {lanc ? <p className="lp-lanc"><strong>Preço de lançamento</strong> até {fmtData(janelaLancamento().fim)}. Fica com ele nas renovações enquanto não cancelar.</p> : null}
             <div className="lp-planos">
-              {planos.map((p) => (
-                <article key={p.id} className={'lp-plano' + (p.destaque ? ' lp-plano-top' : '')}>
-                  {p.destaque ? <span className="lp-selo">{p.destaque}</span> : null}
-                  <h3>{p.nome}</h3>
-                  <p className="lp-para">{p.para}</p>
-                  <p className="lp-preco"><strong>{p.preco} €</strong><span>/mês + IVA</span></p>
-                  <ul>{p.inclui.map((x) => <li key={x}><Icone n="certo" s={18} />{x}</li>)}</ul>
-                  <Link href="/registar" className={'lp-btn lp-btn-lg' + (p.destaque ? '' : ' lp-btn-escuro')}>Experimentar o {p.nome}</Link>
-                  <a href={p.exemplo.href} target="_blank" rel="noopener" className="lp-link">{p.exemplo.rotulo}</a>
-                </article>
-              ))}
+              {planos.map((p) => {
+                const d = PLANOS[p.id], pr = d.precos[tarifa];
+                return (
+                  <article key={p.id} className={'lp-plano' + (p.selo ? ' lp-plano-top' : '')}>
+                    {p.selo ? <span className="lp-selo">{p.selo}</span> : null}
+                    <h3>{d.nome}</h3>
+                    <p className="lp-para">{p.para}</p>
+                    <p className="lp-preco"><strong>{fmtPreco(pr.mensal)}</strong><span>/mês + IVA</span></p>
+                    <p className="lp-anual">ou {fmtPreco(pr.anual)}/ano, com 2 meses oferecidos{lanc ? ` · preço normal ${fmtPreco(d.precos.normal.mensal)}/mês` : ''}</p>
+                    <ul>
+                      {p.inclui.map((x) => <li key={x}><Icone n="certo" s={18} />{x}</li>)}
+                      {(p.emBreve || []).map((x) => <li key={x} className="lp-breve"><Icone n="certo" s={18} /><span>{x} <em>em breve</em></span></li>)}
+                    </ul>
+                    <Link href="/registar" className={'lp-btn lp-btn-lg' + (p.selo ? '' : ' lp-btn-escuro')}>Experimentar 14 dias grátis</Link>
+                    <a href={p.exemplo.href} target="_blank" rel="noopener" className="lp-link">{p.exemplo.rotulo}</a>
+                  </article>
+                );
+              })}
             </div>
             <p className="lp-nota">{notaPlanos}</p>
           </div>

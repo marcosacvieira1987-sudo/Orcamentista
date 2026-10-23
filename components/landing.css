@@ -159,3 +159,13 @@
   .lp-sec{padding:120px 0}
 }
 @media (max-width:380px){.lp-entrar{display:none}}
+
+/* planos: três colunas, valor anual e funções que chegam em breve */
+.lp-preco{margin-bottom:6px}
+.lp-anual{margin:0 0 24px;font-size:14px;color:var(--lp-cinza)}
+.lp-plano-top .lp-anual{color:rgba(255,255,255,.7)}
+.lp-plano li.lp-breve{opacity:.7}
+.lp-breve em{font:600 10px/1 var(--mono);font-style:normal;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:999px;border:1px solid currentColor;margin-left:4px;white-space:nowrap}
+.lp-lanc{margin-top:24px;padding:14px 18px;border-radius:14px;background:var(--lp-noite);color:#fff;max-width:640px}
+.lp-lanc strong{color:var(--lp-sol)}
+@media (min-width:960px){.lp-planos{grid-template-columns:repeat(3,minmax(0,1fr))}}

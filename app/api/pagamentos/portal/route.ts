@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { origemDoPedido, redirecionar } from '@/lib/redirecionar';
-import { stripe, stripeConfigurado } from '@/lib/stripe';
+import { configuracaoPortal, stripe, stripeConfigurado } from '@/lib/stripe';
 import { utilizadorAtual } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -12,7 +12,8 @@ export async function POST(req: Request) {
   const { data } = await u.sb.from('assinaturas').select('stripe_customer').eq('user_id', u.id).maybeSingle();
   if (!stripeConfigurado() || !data?.stripe_customer) return redirecionar('/planos');
   try {
-    const s = await stripe().billingPortal.sessions.create({ customer: data.stripe_customer, return_url: `${origemDoPedido(req)}/planos`, locale: 'pt' });
+    const configuration = (await configuracaoPortal()) || undefined;
+    const s = await stripe().billingPortal.sessions.create({ customer: data.stripe_customer, return_url: `${origemDoPedido(req)}/planos`, locale: 'pt', configuration });
     return NextResponse.redirect(s.url, 303);
   } catch (e) {
     console.error('stripe portal', e);
