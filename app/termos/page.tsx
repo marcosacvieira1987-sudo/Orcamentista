@@ -24,7 +24,7 @@ export default function Termos() {
       <p>Cada conta é de uma empresa ou profissional. Os dados indicados devem ser verdadeiros e a palavra-passe deve ficar só consigo. É responsável pelo que for feito com a sua conta.</p>
 
       <h2>4. Período experimental</h2>
-      <p>As contas novas têm 14 dias grátis, sem pedir cartão, com as funções do plano Premium e até {LIMITE_EXPERIMENTAL} orçamentos com inteligência artificial. No fim, para continuar a usar a inteligência artificial é preciso escolher um plano. Os orçamentos e PDF já feitos continuam acessíveis.</p>
+      <p>As contas novas têm 14 dias grátis, sem pedir cartão, com as funções do plano Premium e até {LIMITE_EXPERIMENTAL} orçamentos com inteligência artificial para os 14 dias todos (este limite não volta a zero no início do mês). No fim, para continuar a usar a inteligência artificial é preciso escolher um plano. Os orçamentos e PDF já feitos continuam acessíveis.</p>
 
       <h2>5. Planos e preços</h2>
       <p>Preços sem IVA; acresce IVA à taxa legal (23 %).</p>

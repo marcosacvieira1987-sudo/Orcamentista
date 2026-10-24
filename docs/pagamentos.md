@@ -5,7 +5,7 @@ As regras de negócio estão em [`decisoes.md`](decisoes.md). O código está pr
 ## Como funciona
 
 - **Planos:** Essencial, Pro e Premium. Pagamento mensal ou anual, que vale 10 meses. Preços, limites e datas estão num só ficheiro, `lib/planos.ts`.
-- **Conta nova:** 14 dias grátis, sem cartão, com as funções do Premium e o limite do Essencial (6 orçamentos com IA).
+- **Conta nova:** 14 dias grátis, sem cartão, com as funções do Premium e 2 orçamentos com IA para os 14 dias todos (`LIMITE_EXPERIMENTAL`; não volta a zero no dia 1). Ajustes ao mesmo orçamento não contam outra vez.
 - **Limite mensal:** "X de Y orçamentos com IA este mês" aparece na lista e na página Plano. Ao chegar ao limite, a IA pausa para orçamentos novos até dia 1. Os ajustes a orçamentos já começados continuam.
 - **Preço de lançamento:**
   - à venda só entre `LANCAMENTO_INICIO` e `LANCAMENTO_FIM`;

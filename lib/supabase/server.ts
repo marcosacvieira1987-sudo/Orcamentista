@@ -33,7 +33,7 @@ export async function exigirUtilizador() {
   return u;
 }
 
-// Cliente administrativo: apagar a conta (RGPD) e gravar subscrições do Stripe. Ignora RLS — usar com cuidado.
+// Cliente administrativo: apagar a conta (RGPD), gravar subscrições do Stripe e reservar o limite diário da IA. Ignora RLS — usar com cuidado.
 export function supabaseAdmin() {
   const chave = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!chave) throw new Error('Falta SUPABASE_SECRET_KEY');
