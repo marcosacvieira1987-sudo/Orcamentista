@@ -102,7 +102,9 @@ Cada uma passou por duas etapas: a primeira ideia, uma revisão para confirmar s
 | Textos pela IA na experiência | 3 vezes, como no Pro | A experiência tem as funções do Premium com o limite do Essencial; para os textos, o limite mais baixo de quem os tem é o do Pro |
 | Beta | Preço de lançamento e 1.º mês grátis só na primeira adesão | Coerente com "se cancelar e voltar, paga o preço normal" |
 | Mudar de plano | Feito no app, não no portal do Stripe | O portal podia mudar para o preço normal; no app mantém-se o preço de lançamento |
-| Garantia de 30 dias | Conta a partir da primeira subscrição da conta | "Só na primeira compra de cada conta" |
+| Garantia de 30 dias | Conta a partir do primeiro pagamento da conta | "Só na primeira compra de cada conta"; durante os dias grátis ainda não há nada a reembolsar |
+| Subscrever durante os 14 dias grátis | Os dias que faltam mantêm-se; a primeira cobrança é no fim da experiência | Não penaliza quem compra cedo (por exemplo, nas 72 horas do lançamento); é a prática habitual e o Stripe suporta-a |
+| Orçamento de exemplo | Botão "veja primeiro um orçamento de exemplo": valores fictícios, sem IA, não se envia e não conta nas métricas | Quem experimenta vê logo o resultado final sem gastar o limite |
 | Página da proposta | Só Pro, Premium e experiência; o Essencial envia o PDF | Faz parte do espaço personalizado |
 | Cor por omissão das empresas novas | Grafite neutro (antes era azul) | Não impõe uma cor de marca a quem ainda não escolheu |
 | Visitas à página da proposta | Contadas no browser, não no servidor | A pré-visualização do link no WhatsApp e os verificadores de links do email contavam como "vista" |

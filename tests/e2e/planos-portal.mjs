@@ -12,8 +12,12 @@ await p.getByLabel('Nome da empresa').fill('Teste Lda'); await p.getByLabel('Ema
 await p.getByRole('checkbox').check(); await p.getByRole('button', { name: 'Criar conta' }).click(); await p.waitForURL('**/configuracao');
 const uid = sql(`select id from auth.users where email='${email}'`);
 if (fase === 'normal') {
-  await p.goto(B + '/planos'); await p.getByRole('button', { name: 'Subscrever o Pro' }).click(); await p.waitForURL('**/planos?sessao=*');
+  await p.goto(B + '/planos');
+  ok(await p.getByText(/mantém os \d+ dias grátis que faltam/).count() === 1, 'na experiência: aviso de que mantém os dias grátis');
+  await p.getByRole('button', { name: 'Subscrever o Pro' }).click(); await p.waitForURL('**/planos?sessao=*');
+  ok(await p.getByText(/mantém os \d+ dias grátis que faltam/).count() === 0, 'aviso de manter os dias grátis já não aparece depois de subscrever');
   ok((await p.locator('.plano-sit strong').first().innerText()) === 'Plano Pro mensal ativo', 'Pro mensal ativo durante a experiência');
+  ok(sql(`select estado||'|'||(periodo_fim > now() + interval '12 days')||'|'||(primeira_compra is null) from assinaturas where user_id='${uid}'`) === 'trialing|true|true', 'mantém os dias grátis: 1.ª cobrança no fim da experiência, garantia só depois de pagar');
   await p.getByRole('button', { name: /Passar a anual/ }).click(); await p.waitForURL('**/planos?mudou=1');
   ok(sql(`select plano||'/'||periodo from assinaturas where user_id='${uid}'`) === 'pro/anual', 'passou a anual');
   await p.getByRole('button', { name: /Pagamento, faturas/ }).click(); await p.waitForURL(M + '/portal*');
@@ -27,7 +31,7 @@ if (fase === 'normal') {
   ok(await visivel(p.getByText('Preço de lançamento', { exact: true })), 'janela aberta: aviso de preço de lançamento');
   ok((await p.locator('.plano-preco strong').allInnerTexts()).join('|') === '19 €|39 €|119 €', 'janela aberta: preços de lançamento para todos');
   await p.getByRole('button', { name: 'Subscrever o Premium' }).click(); await p.waitForURL('**/planos?sessao=*');
-  ok(sql(`select plano||'/'||lancamento||'/'||estado from assinaturas where user_id='${uid}'`) === 'premium/true/active', 'compra na janela: lançamento, sem mês grátis');
+  ok(sql(`select plano||'/'||lancamento||'/'||estado from assinaturas where user_id='${uid}'`) === 'premium/true/trialing', 'compra na janela durante a experiência: lançamento e mantém os dias grátis');
   ok((await p.locator('.plano-sit').innerText()).includes('preço de lançamento enquanto não cancelar'), 'mensagem: mantém o preço');
   const L = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
   await L.goto(B + '/#planos');

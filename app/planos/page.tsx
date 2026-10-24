@@ -22,7 +22,7 @@ function situacao(a: Acesso): { titulo: string; texto: string; tom: '' | 'warn' 
   const tarifa = a.lancamento ? ' Tem o preço de lançamento enquanto não cancelar.' : '';
   if (a.via === 'isento') return { titulo: 'Acesso total', texto: 'Esta conta tem todas as funções incluídas, sem limite.', tom: '' };
   if (a.via === 'subscricao' && a.estado === 'past_due') return { titulo: `Plano ${nome}: pagamento em atraso`, texto: 'A última cobrança falhou. Atualize o cartão em "Pagamento e faturas" para não perder o acesso.', tom: 'crit' };
-  if (a.via === 'subscricao' && a.estado === 'trialing') return { titulo: `Plano ${nome}: 1.º mês grátis`, texto: `A primeira cobrança é a ${fim}.${tarifa}`, tom: '' };
+  if (a.via === 'subscricao' && a.estado === 'trialing') return { titulo: `Plano ${nome} ${a.periodo === 'anual' ? 'anual' : 'mensal'} ativo`, texto: `Grátis até ${fim}: a primeira cobrança é nesse dia.${tarifa}`, tom: '' };
   if (a.via === 'subscricao') return { titulo: `Plano ${nome} ${a.periodo === 'anual' ? 'anual' : 'mensal'} ativo`, texto: (a.cancelaNoFim ? `Termina a ${fim}. Até lá mantém todas as funções do plano.` : fim ? `Renova a ${fim}.` : '') + tarifa, tom: '' };
   if (a.via === 'experimental') return { titulo: `Período experimental: ${a.diasExperimental === 1 ? 'falta 1 dia' : `faltam ${a.diasExperimental} dias`}`, texto: `Tem as funções do Premium, até ${a.limite} orçamentos com IA. Escolha um plano para continuar depois disso.`, tom: a.diasExperimental <= 5 ? 'warn' : '' };
   return { titulo: 'Sem plano ativo', texto: 'Os seus orçamentos e PDF continuam disponíveis, mas a IA está em pausa. Escolha um plano para continuar.', tom: 'crit' };
@@ -85,6 +85,9 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
           <p className="callout lanc"><strong>Preço de lançamento{beta ? ' para colegas da beta' : ''}</strong><span className="small">{beta ? 'Sem prazo para aderir, e o 1.º mês é grátis.' : `À venda até ${fmtData(fimLanc)}.`} Fica com este preço nas renovações enquanto não cancelar.</span></p>
         ) : null}
 
+        {acesso.via === 'experimental' && acesso.diasExperimental > 2 && !beta ? (
+          <p className="small muted">Se subscrever agora, mantém os {acesso.diasExperimental} dias grátis que faltam: a primeira cobrança é só no fim da experiência.</p>
+        ) : null}
         <nav className="chips periodo" aria-label="Período de pagamento">
           <Link href="/planos?periodo=mensal" className="chip" aria-current={periodo === 'mensal' ? 'true' : undefined}>Mensal</Link>
           <Link href="/planos?periodo=anual" className="chip" aria-current={periodo === 'anual' ? 'true' : undefined}>Anual · 2 meses oferecidos</Link>

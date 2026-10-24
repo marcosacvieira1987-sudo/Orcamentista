@@ -43,8 +43,9 @@ http.createServer(async (req, res) => {
   if (p.startsWith('/pagar/')) {
     const s = db.sessoes[p.split('/')[2]], sid = novoId('sub');
     const preco = db.precos.find((x) => x.id === s._b['line_items[0][price]']);
-    const trial = Number(s._b['subscription_data[trial_period_days]'] || 0);
-    db.subs[sid] = { id: sid, object: 'subscription', status: trial ? 'trialing' : 'active', customer: s.customer, cancel_at_period_end: false, cancel_at: null, start_date: Math.floor(Date.now() / 1000),
+    const fimTrial = Number(s._b['subscription_data[trial_end]'] || 0);
+    const trial = fimTrial ? Math.ceil((fimTrial - Date.now() / 1000) / 86400) : Number(s._b['subscription_data[trial_period_days]'] || 0);
+    db.subs[sid] = { id: sid, object: 'subscription', status: trial ? 'trialing' : 'active', customer: s.customer, cancel_at_period_end: false, cancel_at: null, start_date: Math.floor(Date.now() / 1000), trial_end: trial ? (fimTrial || Math.floor(Date.now() / 1000) + trial * 86400) : null,
       metadata: { user_id: s._b['subscription_data[metadata][user_id]'] }, _taxa: s._b['line_items[0][tax_rates][0]'], _trial: trial,
       items: { data: [{ id: novoId('si'), price: preco, current_period_end: Math.floor(Date.now() / 1000) + (trial || 30) * 86400 }] } };
     s.status = 'complete'; s.subscription = sid;

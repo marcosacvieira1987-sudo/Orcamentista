@@ -99,7 +99,7 @@ ok((await Bt.p.locator('.plano-nota').nth(1).innerText()).includes('Preço norma
 await shot(Bt.p, 'beta');
 await Bt.p.getByRole('button', { name: 'Começar o Pro com 1 mês grátis' }).click();
 await Bt.p.waitForURL('**/planos?sessao=*');
-ok((await Bt.p.locator('.plano-sit strong').first().innerText()) === 'Plano Pro: 1.º mês grátis', 'beta: Pro com 1.º mês grátis (trialing)');
+ok((await Bt.p.locator('.plano-sit strong').first().innerText()) === 'Plano Pro mensal ativo' && (await Bt.p.locator('.plano-sit').innerText()).includes('Grátis até'), 'beta: Pro com 1.º mês grátis (trialing)');
 ok(sql(`select plano||'/'||lancamento||'/'||estado from assinaturas where user_id='${Bt.uid}'`) === 'pro/true/trialing', 'BD: pro, lançamento, trialing');
 await Bt.p.getByRole('button', { name: 'Mudar para o Premium' }).click();
 await Bt.p.waitForURL('**/planos?mudou=1');
