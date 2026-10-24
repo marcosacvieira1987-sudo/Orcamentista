@@ -30,6 +30,7 @@ corre tests/e2e/planos.mjs "$SAIDA"
 corre tests/e2e/planos-portal.mjs normal "$SAIDA"
 corre tests/e2e/marca.mjs "$SAIDA"
 corre tests/e2e/acessibilidade.mjs
+corre tests/e2e/exemplo.mjs "$SAIDA"
 echo "== janela de lançamento aberta"; arrancar "LANCAMENTO_INICIO=2020-01-01T00:00:00Z" || exit 1
 corre tests/e2e/planos-portal.mjs lancamento "$SAIDA"
 echo "== isolamento entre contas (RLS)"; node scripts/testar-rls.mjs | tail -1 | grep -q 'Tudo isolado' || { node scripts/testar-rls.mjs | grep FALHA; falhas=$((falhas+1)); }

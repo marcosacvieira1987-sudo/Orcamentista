@@ -30,6 +30,7 @@ Compila, arranca as imitações e a app, e corre:
 | `planos-portal.mjs lancamento` | preços de lançamento com a janela aberta (a app arranca com `LANCAMENTO_INICIO` no passado) |
 | `marca.mjs` | cores do logótipo, modelos, textos pela IA e limite, marca no app, página da proposta, visitas (os robôs não contam), "Aceitar proposta", proposta expirada, Essencial |
 | `acessibilidade.mjs` | auditoria axe-core (WCAG 2 A/AA) nas páginas principais e na página da proposta |
+| `exemplo.mjs` | orçamento de exemplo (sem IA, não se envia, não conta nos primeiros passos) e dados estruturados do site |
 | `scripts/testar-rls.mjs` | isolamento entre contas (RLS) |
 
 As capturas de ecrã e os registos ficam em `tests/e2e/saida/`, que o git ignora.

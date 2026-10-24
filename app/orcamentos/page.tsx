@@ -14,7 +14,8 @@ const MAIS = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke=
 type Pub = { orcamento_id: string; vistas: number; aceite_em: string | null; aceite_nome: string | null };
 
 // Rascunho → Aprovado → Enviado → Vista → Aceite (envio em dados.meta.enviado; vista e aceite na página da proposta).
-function estadoDe(o: { estado: string; enviado: string | null }, p?: Pub) {
+function estadoDe(o: { estado: string; enviado: string | null; exemplo?: string | null }, p?: Pub) {
+  if (o.exemplo === 'true') return { cls: 'rascunho', txt: 'Exemplo' };
   if (p?.aceite_em) return { cls: 'aceite', txt: 'Aceite' };
   if (p?.vistas) return { cls: 'enviado', txt: 'Vista pelo cliente' };
   if (o.enviado) return { cls: 'enviado', txt: 'Enviado' };
@@ -25,7 +26,7 @@ export default async function Orcamentos() {
   const { sb, id, email } = await exigirUtilizador();
   const [{ data: emp }, { data: lista }, { data: usos }, acesso, mes, { data: pubs }] = await Promise.all([
     sb.from('empresas').select('nome, precos, logo_path, telefone, email, cor').maybeSingle(),
-    sb.from('orcamentos').select('id, estado, numero, tipo, localidade, dono, total, atualizado_em, titulo:dados->orc->>titulo, enviado:dados->meta->>enviado').order('atualizado_em', { ascending: false }).limit(200),
+    sb.from('orcamentos').select('id, estado, numero, tipo, localidade, dono, total, atualizado_em, titulo:dados->orc->>titulo, enviado:dados->meta->>enviado, exemplo:dados->>exemplo').order('atualizado_em', { ascending: false }).limit(200),
     sb.from('uso_ia').select('orcamento_id, custo_usd').not('orcamento_id', 'is', null),
     lerAcesso(sb, id, email),
     usoMensal(sb),
@@ -39,19 +40,21 @@ export default async function Orcamentos() {
   const custo = new Map<string, number>();
   for (const x of usos || []) custo.set(x.orcamento_id, (custo.get(x.orcamento_id) || 0) + Number(x.custo_usd || 0));
   const orcs = lista || [];
+  // o orçamento de exemplo não conta nos primeiros passos nem no resumo
+  const reais = orcs.filter((o) => o.exemplo !== 'true');
 
   // primeiros passos: desaparecem quando estiverem todos feitos
   const passos = [
     { ok: !!emp?.nome && !!(emp?.telefone || emp?.email), txt: 'Nome e contactos da empresa', href: '/configuracao' },
     { ok: !!emp?.logo_path, txt: 'Logótipo e cor da marca', href: '/configuracao' },
     { ok: Array.isArray(emp?.precos) && emp.precos.length > 0, txt: 'O seu preçário', href: '/configuracao#precario' },
-    { ok: orcs.length > 0, txt: 'O primeiro orçamento', href: '' },
+    { ok: reais.length > 0, txt: 'O primeiro orçamento', href: '' },
   ];
   const feitos = passos.filter((p) => p.ok).length;
 
   // resumo dos últimos 30 dias
   const desde = Date.now() - 30 * 24 * 3600 * 1000;
-  const recentes = orcs.filter((o) => new Date(o.atualizado_em).getTime() >= desde);
+  const recentes = reais.filter((o) => new Date(o.atualizado_em).getTime() >= desde);
   const enviados = recentes.filter((o) => o.enviado);
   const valorEnviado = enviados.reduce((s, o) => s + Number(o.total || 0), 0);
 
@@ -102,7 +105,7 @@ export default async function Orcamentos() {
           </section>
         ) : null}
 
-        {orcs.length ? (
+        {reais.length ? (
           <section className="resumo-30" aria-label="Últimos 30 dias">
             {acesso.plano ? <div className="r-ia"><strong className="num">{mes.usados}{Number.isFinite(acesso.limite) ? <small> de {acesso.limite}</small> : null}</strong><span>orçamentos com IA este mês</span>{Number.isFinite(acesso.limite) ? <i className="r-barra" aria-hidden="true"><b style={{ width: `${Math.min(100, (mes.usados / acesso.limite) * 100)}%` }} /></i> : null}</div> : null}
             <div><strong className="num">{recentes.length}</strong><span>orçamentos em 30 dias</span></div>
@@ -116,6 +119,7 @@ export default async function Orcamentos() {
             <p className="vg-t">Ainda não tem orçamentos.</p>
             <p className="muted">Comece pelas fotografias da obra: a IA trata do resto.</p>
             <form action="/orcamentos/novo" method="post"><button className="btn primary lg btn-novo">{MAIS}Criar o primeiro orçamento</button></form>
+            <form action="/orcamentos/exemplo" method="post"><button className="link">Ou veja primeiro um orçamento de exemplo, sem gastar nada</button></form>
           </section>
         ) : (
           <section className="cartoes" aria-label="Lista de orçamentos">

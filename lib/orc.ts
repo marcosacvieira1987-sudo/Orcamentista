@@ -61,6 +61,7 @@ export type Estado = {
   meta: Meta; revisto: boolean; aprovado: boolean; mensagem: string;
   modelo?: Modelo; mostrar_precos?: MostrarPrecos;
   tempo?: Tempo;
+  exemplo?: boolean; // orçamento de exemplo, com valores fictícios: não se envia a clientes nem conta nas métricas
 };
 // Medida da beta: tempo ativo no editor (segundos), tempo até à primeira aprovação e a estimativa
 // do profissional de quanto levaria sem o Prumo. Só se usa em números agregados.

@@ -282,7 +282,7 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
       empresa.logo_path ? bytesDe(sb, 'logos', empresa.logo_path) : Promise.resolve(null),
       ...S.fotos.map((f) => bytesDe(sb, 'fotos', f.path))
     ]);
-    return { empresa, logo, pedido: S.pedido, meta: S.meta, orc: S.orc!, totais: totais(S.orc, empresa), fotos, leitura: S.leitura, exemplo: false, modelo: S.modelo, mostrarPrecos: S.mostrar_precos, fontes: fontes as Awaited<ReturnType<typeof carregarFontes>> };
+    return { empresa, logo, pedido: S.pedido, meta: S.meta, orc: S.orc!, totais: totais(S.orc, empresa), fotos, leitura: S.leitura, exemplo: !!S.exemplo, modelo: S.modelo, mostrarPrecos: S.mostrar_precos, fontes: fontes as Awaited<ReturnType<typeof carregarFontes>> };
   }
   async function pdf(partilhar: boolean) {
     if (!S.orc) return;
@@ -621,7 +621,9 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
           <p className="small muted" role="status">{pdfStatus}</p>
           {custoIa !== null ? <p className="small muted">Custo de IA deste orçamento: {custoIa.toFixed(2).replace('.', ',')} US$</p> : null}
         </section>
-        <section className="sheet enviar" aria-labelledby="lab-env">
+        {S.exemplo ? (
+          <section className="callout warn" aria-label="Orçamento de exemplo"><strong>Este é um orçamento de exemplo</strong><p className="small">Tem valores fictícios e o PDF diz &quot;exemplo&quot;: serve para ver o resultado, não para enviar a clientes. Para a sua obra, crie um orçamento novo.</p><form action="/orcamentos/novo" method="post"><button className="btn primary sm">Criar um orçamento novo</button></form></section>
+        ) : <section className="sheet enviar" aria-labelledby="lab-env">
           <div className="sh-h"><h2 id="lab-env">Enviar ao cliente</h2>{enviadoTxt ? <span className="small ok-msg">{enviadoTxt}</span> : null}</div>
           <div className="f-grid">
             <label className="f"><span className="lab">Telemóvel</span><input type="tel" inputMode="tel" value={S.pedido.telefone || ''} placeholder="Ex.: 912 345 678" onChange={(e) => upd((d) => { d.pedido.telefone = e.target.value; })} /></label>
@@ -644,8 +646,8 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
           <p className="sh-f small muted">{pagina
             ? 'Abre a conversa ou o email já com a mensagem abaixo e o link da página da proposta, com a sua marca: o cliente vê os trabalhos, descarrega o PDF e pode aceitar a proposta. Só envia quando confirmar na aplicação.'
             : 'Abre a conversa ou o email já com a mensagem abaixo e um link seguro para o PDF, válido durante a validade da proposta. Só envia quando confirmar na aplicação.'}</p>
-        </section>
-        {!S.tempo?.antes ? (
+        </section>}
+        {!S.tempo?.antes && !S.exemplo ? (
           <section className="card ms antes" aria-labelledby="lab-antes">
             <span className="lab" id="lab-antes">Ajude-nos a medir (opcional)</span>
             <p className="small">Sem o Prumo, quanto tempo levaria a preparar este orçamento?</p>

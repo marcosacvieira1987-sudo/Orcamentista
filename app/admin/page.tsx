@@ -22,7 +22,7 @@ export default async function Metricas() {
   const admin = supabaseAdmin();
   const [{ data: lista }, { data: orcs }, { data: usos }, { data: pubs }, { data: ass }] = await Promise.all([
     admin.auth.admin.listUsers({ perPage: 1000 }),
-    admin.from('orcamentos').select('id, user_id, estado, criado_em, tempo:dados->tempo').limit(10000),
+    admin.from('orcamentos').select('id, user_id, estado, criado_em, tempo:dados->tempo').or('dados->>exemplo.is.null,dados->>exemplo.neq.true').limit(10000),
     admin.from('uso_ia').select('user_id, orcamento_id, custo_usd, criado_em').limit(50000),
     admin.from('propostas').select('user_id, vistas, aceite_em').limit(10000),
     admin.from('assinaturas').select('user_id, plano, estado, experimental_ate, lancamento, periodo').limit(10000),
