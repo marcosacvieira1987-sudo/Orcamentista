@@ -90,4 +90,9 @@ Atualizado a 24 out 2026. Fonte: documento "Prumo — Decisões do produto".
   - revisão jurídica;
   - Stripe em modo real;
   - um teste completo, do registo ao pagamento.
-- **Base de dados de produção:** correr `supabase/atualizar-producao.sql` (0002 a 0006).
+- **Base de dados de produção:** correr `supabase/atualizar-producao.sql` (0002 a 0007; seguro de repetir). A 0007 tem de estar na base de dados antes de publicar o ramo `seguranca-ia-e-conta`: sem ela, a IA responde "indisponível".
+- **Segurança (24 out 2026):**
+  - links de email só para destinos fixos;
+  - a conta só se apaga depois dos ficheiros todos;
+  - o limite diário da IA fica reservado antes de cada chamada, também nos textos da marca;
+  - Stripe 23.0.1.

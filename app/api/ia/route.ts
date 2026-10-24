@@ -5,7 +5,7 @@ import { ErroIA, perguntarClaude, perguntarJSON, type Uso } from '@/lib/ia';
 import { ivaPadrao, juntarLeituras, normOrc, normPerguntas, type Empresa, type Estado, type Modelo, type Orc } from '@/lib/orc';
 import { promptAjuste, promptLeitura, promptMensagem, promptOrcamento, promptPerguntas, type Contexto } from '@/lib/prompts';
 import { lerAcesso, MONTAGENS_POR_ORCAMENTO, usoExperimental, usoMensal } from '@/lib/plano';
-import { utilizadorAtual } from '@/lib/supabase/server';
+import { supabaseAdmin, utilizadorAtual } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -49,10 +49,21 @@ export async function POST(req: Request) {
   }
   if (corpo.acao === 'orcamento' && (contagem.montagens.get(orcamentoId) || 0) >= MONTAGENS_POR_ORCAMENTO) return NextResponse.json({ code: 'montagens' }, { status: 429 });
 
-  // Limite diário por utilizador (controlo de custos). As linhas só podem ser lidas e acrescentadas.
-  const desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const { count } = await u.sb.from('uso_ia').select('id', { count: 'exact', head: true }).gte('criado_em', desde);
-  if ((count || 0) >= LIMITE) return NextResponse.json({ code: 'limite_diario' }, { status: 429 });
+  // Limite diário por utilizador (controlo de custos). O pedido fica reservado ANTES de chamar o Claude,
+  // numa só transação e com a chave secreta (migração 0007): pedidos em simultâneo não passam todos,
+  // e a sessão do utilizador não consegue impedir o registo. Se a reserva falhar, a IA não corre.
+  let admin: SupabaseClient;
+  let reserva: number | null;
+  try {
+    admin = supabaseAdmin();
+    const { data, error } = await admin.rpc('reservar_uso_ia', { p_user: u.id, p_acao: String(corpo.acao), p_orcamento: orcamentoId, p_limite: LIMITE });
+    if (error) throw error;
+    reserva = data;
+  } catch (e) {
+    console.error('api/ia: reservar uso', e);
+    return NextResponse.json({ code: 'unavailable' }, { status: 503 });
+  }
+  if (reserva == null) return NextResponse.json({ code: 'limite_diario' }, { status: 429 });
 
   const { data: row } = await u.sb.from('empresas').select('*').eq('user_id', u.id).maybeSingle();
   const empresa = lerEmpresa(row);
@@ -68,9 +79,10 @@ export async function POST(req: Request) {
     else { console.error('api/ia', e); resposta = NextResponse.json({ code: 'unavailable' }, { status: 500 }); }
   }
 
-  const { error } = await u.sb.from('uso_ia').insert({ acao: corpo.acao, orcamento_id: orcamentoId, ...uso });
-  // base de dados ainda sem a migração 0002: regista pelo menos o pedido, para o limite diário
-  if (error) await u.sb.from('uso_ia').insert({ acao: corpo.acao });
+  // O pedido já conta para o limite diário (reserva acima); aqui só se junta o custo.
+  // Os limites mensal e experimental contam as linhas com tokens, por isso só contam depois disto.
+  const { error } = await admin.rpc('registar_custo_uso_ia', { p_id: reserva, p_user: u.id, p_tokens_in: uso.tokens_in, p_tokens_out: uso.tokens_out, p_custo_usd: uso.custo_usd });
+  if (error) console.error('api/ia: registar custo', error);
   return resposta;
 }
 

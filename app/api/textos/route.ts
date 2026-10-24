@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { lerEmpresa } from '@/lib/empresa';
 import { ErroIA, perguntarJSON, type Uso } from '@/lib/ia';
 import type { Questionario } from '@/lib/orc';
 import { lerAcesso, textosNoMes } from '@/lib/plano';
 import { promptTextos } from '@/lib/prompts';
-import { utilizadorAtual } from '@/lib/supabase/server';
+import { supabaseAdmin, utilizadorAtual } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -26,9 +27,19 @@ export async function POST(req: Request) {
   if (!acesso.plano) return NextResponse.json({ code: 'sem_plano' }, { status: 402 });
   if (!acesso.marca) return NextResponse.json({ code: 'so_pro' }, { status: 403 });
   if (usados >= acesso.limiteTextos) return NextResponse.json({ code: 'limite_textos', limite: acesso.limiteTextos }, { status: 402 });
-  const desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const { count } = await u.sb.from('uso_ia').select('id', { count: 'exact', head: true }).gte('criado_em', desde);
-  if ((count || 0) >= LIMITE_DIA) return NextResponse.json({ code: 'limite_diario' }, { status: 429 });
+  // Limite diário reservado antes de chamar o Claude (migração 0007), como em /api/ia. Se a reserva falhar, a IA não corre.
+  let admin: SupabaseClient;
+  let reserva: number | null;
+  try {
+    admin = supabaseAdmin();
+    const { data, error } = await admin.rpc('reservar_uso_ia', { p_user: u.id, p_acao: 'textos', p_orcamento: null, p_limite: LIMITE_DIA });
+    if (error) throw error;
+    reserva = data;
+  } catch (e) {
+    console.error('api/textos: reservar uso', e);
+    return NextResponse.json({ code: 'unavailable' }, { status: 503 });
+  }
+  if (reserva == null) return NextResponse.json({ code: 'limite_diario' }, { status: 429 });
 
   const uso: Uso = { tokens_in: 0, tokens_out: 0, custo_usd: 0 };
   let resposta: NextResponse;
@@ -40,6 +51,8 @@ export async function POST(req: Request) {
     if (e instanceof ErroIA) resposta = NextResponse.json({ code: e.code }, { status: e.status });
     else { console.error('api/textos', e); resposta = NextResponse.json({ code: 'unavailable' }, { status: 500 }); }
   }
-  await u.sb.from('uso_ia').insert({ acao: 'textos', ...uso, custo_usd: Math.round(uso.custo_usd * 10000) / 10000 });
+  // O pedido já conta para o limite diário; aqui só se junta o custo (o limite mensal dos textos conta as linhas com tokens).
+  const { error } = await admin.rpc('registar_custo_uso_ia', { p_id: reserva, p_user: u.id, p_tokens_in: uso.tokens_in, p_tokens_out: uso.tokens_out, p_custo_usd: Math.round(uso.custo_usd * 10000) / 10000 });
+  if (error) console.error('api/textos: registar custo', error);
   return resposta;
 }
