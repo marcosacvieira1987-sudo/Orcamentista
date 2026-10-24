@@ -389,7 +389,7 @@ async function rapido(b: Base, d: DadosPDF) {
     ['Seguro', textoSeguroCompleto(e)],
     ['IVA', taxas.length ? `Taxa${taxas.length > 1 ? 's' : ''} de ${taxas.join(' e ')}, incluída${taxas.length > 1 ? 's' : ''} no total com IVA.` : ''],
     ['Deslocação e entulho', e.extras || ''],
-    ['Condições gerais', e.condicoes_texto || ''],
+    ['Condições gerais', linhasDe(e.condicoes_texto)],
     ['Alvará ou registo', e.alvara || '']
   ]);
 
@@ -401,7 +401,8 @@ async function rapido(b: Base, d: DadosPDF) {
   }
 
   // 08 Aceitação
-  titulo(n++, 'Aceitação');
+  // título, frase e linhas de assinatura sempre na mesma página
+  titulo(n++, 'Aceitação', 260);
   paragrafo(`Aceito a proposta n.º ${d.meta.numero || '-'}${e.nome ? ' de ' + e.nome : ''}, nas condições descritas.`, { depois: 14 });
   precisa(130);
   ['Nome', 'Data', 'Assinatura'].forEach((kk, i) => {
@@ -726,7 +727,7 @@ async function completo(b: Base, d: DadosPDF) {
     ['A confirmar', d.orc.a_confirmar],
     ['Deslocação e entulho', e.extras || ''],
     ['Trabalhos extra', 'Trabalhos não descritos ou imprevistos são orçamentados à parte e só avançam depois de aprovados.'],
-    ['Condições gerais', e.condicoes_texto || ''],
+    ['Condições gerais', linhasDe(e.condicoes_texto)],
     ['Validade', `${val} dias, até ${fmtData(fim)}.`],
     ['Alvará ou registo', e.alvara || '']
   ]);
@@ -896,6 +897,9 @@ function grelhaFotos(b: Base, k: ReturnType<typeof corrido>, nums: number[], ch 
 }
 
 // Linhas "rótulo | texto". Listas: um item por linha, com marcador; as listas longas continuam na página seguinte.
+// texto com uma condição por linha → lista
+const linhasDe = (t: string) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
+
 function tabelaCondicoes(b: Base, k: ReturnType<typeof corrido>, linhas: [string, string | string[]][]) {
   const { F, C, txt, traco, rotulo, tick } = b;
   const { s, novaPagina, FUNDO } = k;
