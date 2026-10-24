@@ -1,6 +1,6 @@
 # Decisões do Prumo Orçamentista
 
-Atualizado a 23 out 2026. Fonte: documento "Prumo — Decisões do produto".
+Atualizado a 24 out 2026. Fonte: documento "Prumo — Decisões do produto".
 
 ## Planos (preços por mês, sem IVA; IVA de 23%)
 
@@ -14,6 +14,7 @@ Atualizado a 23 out 2026. Fonte: documento "Prumo — Decisões do produto".
 - Os limites de orçamentos são valores iniciais e ficam num só sítio do código, para se ajustarem. Base: um orçamento completo pequeno custa em média 0,37 € de IA, por isso estes limites põem a IA à volta de 11% do preço de lançamento.
 - Conta como 1 orçamento com IA cada orçamento em que a IA trabalha pela primeira vez nesse mês de calendário. Ajustes ao mesmo orçamento não contam outra vez. Um orçamento duplicado conta como novo quando a IA trabalha nele.
 - O limite diário de 80 pedidos à IA (LIMITE_IA_DIA) fica como travão de segurança.
+- Período experimental (decidido a 24 out 2026): 14 dias grátis, sem cartão, com as funções do Premium e 2 orçamentos com IA para o período todo, que não voltam a zero no dia 1. Custo máximo de cerca de 0,74 € de IA por conta. Ajustes ao mesmo orçamento não contam outra vez.
 - A app mostra "X de Y orçamentos este mês". Ao chegar ao limite, a IA pausa até ao mês seguinte, com uma mensagem a sugerir subir de plano.
 
 ## Lançamento (Black Friday)
@@ -61,7 +62,7 @@ Atualizado a 23 out 2026. Fonte: documento "Prumo — Decisões do produto".
 ## A confirmar pelo Marcos
 
 - Os limites de orçamentos por plano (6, 12 e 36), quando houver mais custos reais.
-- O limite durante os 14 dias grátis. Por omissão: funções do Premium com o limite do Essencial.
+- Uma só experiência por NIF ou por número de telemóvel, para travar contas repetidas.
 - A data final de abertura da venda.
 
 ## Fases de implementação
@@ -72,7 +73,7 @@ Atualizado a 23 out 2026. Fonte: documento "Prumo — Decisões do produto".
 4. Site e design: paleta, vídeo do hero, app clara.
 5. Antes de abrir: domínio e email, revisão jurídica, Stripe em modo real e um teste completo, do registo ao pagamento.
 
-## Estado (23 out 2026)
+## Estado (24 out 2026)
 
 - **Fase 1, planos e lançamento:** feita. Falta o Stripe: criar a conta, pôr a chave no Vercel e carregar em "Criar o que falta no Stripe" na página Plano (ver `pagamentos.md`).
 - **Fase 2, faturação certificada:** à espera do contabilista (Moloni ligado ao Stripe).
@@ -83,7 +84,7 @@ Atualizado a 23 out 2026. Fonte: documento "Prumo — Decisões do produto".
   - a página da proposta com "Aceitar proposta".
 
   Os avisos por email precisam de `RESEND_API_KEY` e `EMAIL_REMETENTE`; sem eles, o aviso aparece só no app.
-- **Fase 4, site e design:** feita, menos o vídeo. Quando houver vídeo, basta pô-lo em `public/landing/` e indicar o caminho em `lib/site.ts` (`video`).
+- **Fase 4, site e design:** feita. O filme do hero, "A Linha" (1080×1920, sem marca de água), está em `public/landing/a-linha.mp4`. No site toca uma vez, numa coluna ao lado do título, e as cartas do último fotograma passam a ser links (Como funciona, Ver os planos, Experimentar 14 dias grátis). Corre também, escurecido, no ecrã "Entrar"; no ecrã de planos corre só o ato 3, em loop (`a-linha-ato3.mp4`). A montra mostra as páginas da proposta completa fotografadas na mesma mesa e luz.
 - **Fase 5, antes de abrir:** do lado do Marcos:
   - domínio e email;
   - revisão jurídica;
