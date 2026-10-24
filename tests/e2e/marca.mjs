@@ -124,6 +124,13 @@ sql(`insert into propostas (token, user_id, orcamento_id, dados) select '${tokEx
 await cli.goto(`${B}/p/${tokExp}`);
 ok(await cli.getByText('Esta proposta expirou').isVisible() && await cli.locator('.pc-form').count() === 0, 'proposta expirada: sem formulário');
 ok((await fetch(`${B}/p/${'0'.repeat(48)}`)).status === 404, 'token desconhecido: 404');
+// uma conta que copia caminhos de ficheiros de outra para a sua cópia não obtém links para eles
+const outro = sql(`select id from auth.users where id <> '${uid}' order by created_at desc limit 1`);
+const orc3 = sql(`insert into orcamentos (user_id, dados) values ('${outro}', '{}') returning id`).split('\n')[0];
+const tokAlheio = [...crypto.getRandomValues(new Uint8Array(24))].map((x) => x.toString(16).padStart(2, '0')).join('');
+sql(`insert into propostas (token, user_id, orcamento_id, dados, pdf_path) select '${tokAlheio}', '${outro}', '${orc3}', dados, pdf_path from propostas where orcamento_id='${orcId}'`);
+const htmlAlheio = await (await fetch(`${B}/p/${tokAlheio}`)).text();
+ok(!/Descarregar PDF/.test(htmlAlheio) && !/alt="Fotografia/.test(htmlAlheio) && !/token=/.test(htmlAlheio), 'ficheiros de outra conta nunca são assinados na página');
 sql(`update assinaturas set plano='essencial', estado='active', experimental_ate=now()-interval '1 day' where user_id='${uid}'`);
 const r4 = await p.evaluate(async () => (await fetch('/api/textos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"questionario":{}}' })).json());
 ok(r4.code === 'so_pro', 'Essencial: textos pela IA recusados');

@@ -42,11 +42,15 @@ export default async function PaginaProposta({ params, searchParams }: { params:
 
   // a visita conta-se no browser (RegistarVisita), para os robôs de pré-visualização não contarem
 
-  // links temporários (1 hora) para o logótipo, o PDF e as fotografias de "O que encontrámos"
-  const nums = (snap.orc.fotos_encontramos || []).filter((n) => snap.fotos[n - 1]).slice(0, 6);
+  // links temporários (1 hora) para o logótipo, o PDF e as fotografias de "O que encontrámos".
+  // A cópia é escrita pela conta do profissional: só se assinam ficheiros da pasta dessa conta,
+  // para ninguém conseguir links para ficheiros de outra conta pondo caminhos alheios na cópia.
+  const daConta = (x: unknown): x is string => typeof x === 'string' && x.startsWith(`${p.user_id}/`) && !x.includes('..');
+  const pdfPath = `${p.user_id}/${p.orcamento_id}/proposta.pdf`;
+  const nums = (snap.orc.fotos_encontramos || []).filter((n) => daConta(snap.fotos[n - 1])).slice(0, 6);
   const [logo, pdf, fotos] = await Promise.all([
-    snap.empresa.logo_path ? admin.storage.from('logos').createSignedUrl(snap.empresa.logo_path, 3600) : Promise.resolve({ data: null }),
-    p.pdf_path ? admin.storage.from('propostas').createSignedUrl(p.pdf_path, 3600, { download: nomeFicheiro(snap.empresa.nome, snap.meta.numero) }) : Promise.resolve({ data: null }),
+    daConta(snap.empresa.logo_path) ? admin.storage.from('logos').createSignedUrl(snap.empresa.logo_path, 3600) : Promise.resolve({ data: null }),
+    p.pdf_path === pdfPath ? admin.storage.from('propostas').createSignedUrl(pdfPath, 3600, { download: nomeFicheiro(snap.empresa.nome, snap.meta.numero) }) : Promise.resolve({ data: null }),
     nums.length ? admin.storage.from('fotos').createSignedUrls(nums.map((n) => snap.fotos[n - 1]), 3600) : Promise.resolve({ data: [] }),
   ]);
   const fotoUrls: Record<number, string> = {};

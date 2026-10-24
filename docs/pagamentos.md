@@ -18,9 +18,9 @@ As regras de negócio estão em [`decisoes.md`](decisoes.md). O código está pr
 
 ## 1. Base de dados (Supabase)
 
-Supabase → **SQL Editor** → New query → cole todo o conteúdo de `supabase/atualizar-producao.sql` → **Run**. Deve aparecer "Base de dados atualizada (0002 a 0006)".
+Supabase → **SQL Editor** → New query → cole todo o conteúdo de `supabase/atualizar-producao.sql` → **Run**. Deve aparecer "Base de dados atualizada (0002 a 0007)".
 
-Este ficheiro junta as migrações 0002 a 0006 e pode correr mais do que uma vez: o que já existir fica como está.
+Este ficheiro junta as migrações 0002 a 0007 e pode correr mais do que uma vez: o que já existir fica como está.
 
 ## 2. Conta Stripe
 
