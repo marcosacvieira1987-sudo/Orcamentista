@@ -5,6 +5,7 @@ import { execSync } from 'node:child_process';
 const SP = process.argv[2] || 'tests/e2e/saida', B = process.env.BASE_URL || 'http://127.0.0.1:3000', M = 'http://127.0.0.1:12111';
 const sql = (q) => execSync(`PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -tAc "${q}"`).toString().trim();
 let falhas = 0; const ok = (c, m) => { console.log((c ? 'OK   ' : 'FALHA') + ' ' + m); if (!c) falhas++; };
+const visivel = (l) => l.waitFor({ timeout: 10000 }).then(() => true, () => false);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
 const erros = [];
 sql(`delete from auth.users where email in ('admin@prumo.teste','beta@prumo.teste')`);
@@ -31,7 +32,7 @@ ok(true, 'admin vê a administração do Stripe (0 de 12 preços)');
 await A.p.getByRole('button', { name: 'Criar o que falta no Stripe' }).click();
 await A.p.getByText('Webhook criado').waitFor();
 ok((await A.p.locator('.segredo').innerText()) === 'whsec_teste', 'segredo do webhook mostrado uma vez');
-ok(await A.p.getByText('Preços: 12 de 12').isVisible(), '12 preços criados com as chaves');
+ok(await visivel(A.p.getByText('Preços: 12 de 12')), '12 preços criados com as chaves');
 ok((await A.p.locator('.admin-stripe li').allInnerTexts()).every((t) => t.startsWith('✓')), 'IVA, portal e webhook criados');
 await A.p.reload(); await A.p.getByText('Preços: 12 de 12').waitFor();
 ok(await A.p.getByRole('button', { name: 'Criar o que falta no Stripe' }).count() === 0, 'com tudo feito, o botão desaparece');
@@ -57,7 +58,7 @@ for (const o of usados) sql(`insert into uso_ia (user_id, acao, orcamento_id, to
 // pedido que falhou (tokens 0) não conta
 const falhado = novoOrc(U.uid); sql(`insert into uso_ia (user_id, acao, orcamento_id, tokens_in) values ('${U.uid}', 'orcamento', '${falhado}', 0)`);
 await U.p.goto(B + '/orcamentos');
-ok(await U.p.getByText('Usou os 6 orçamentos com IA deste mês').isVisible(), 'lista: aviso de limite atingido');
+ok(await visivel(U.p.getByText('Usou os 6 orçamentos com IA deste mês')), 'lista: aviso de limite atingido');
 ok((await U.p.locator('.r-ia strong').innerText()).replace(/\s+/g, ' ') === '6 de 6', 'lista: contador 6 de 6');
 await shot(U.p, 'limite');
 const novo = novoOrc(U.uid);
@@ -91,7 +92,7 @@ await shot(U.p, 'premium');
 // ---------- E. beta: lançamento + 1.º mês grátis, tarifa mantém-se ao mudar ----------
 const Bt = await conta('beta@prumo.teste', 'Beta Obras');
 await Bt.p.goto(B + '/planos');
-ok(await Bt.p.getByText('Preço de lançamento para colegas da beta').isVisible(), 'beta: aviso de preço de lançamento');
+ok(await visivel(Bt.p.getByText('Preço de lançamento para colegas da beta')), 'beta: aviso de preço de lançamento');
 const precosB = await Bt.p.locator('.plano-preco strong').allInnerTexts();
 ok(precosB.join('|') === '19 €|39 €|119 €', `beta: preços de lançamento (${precosB.join(', ')})`);
 ok((await Bt.p.locator('.plano-nota').nth(1).innerText()).includes('Preço normal: 59 €'), 'mostra o preço normal como referência');

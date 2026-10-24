@@ -29,6 +29,7 @@ Compila, arranca as imitações e a app, e corre:
 | `planos-portal.mjs normal` | Pro mensal, passar a anual, portal, apagar conta cancela a subscrição |
 | `planos-portal.mjs lancamento` | preços de lançamento com a janela aberta (a app arranca com `LANCAMENTO_INICIO` no passado) |
 | `marca.mjs` | cores do logótipo, modelos, textos pela IA e limite, marca no app, página da proposta, visitas (os robôs não contam), "Aceitar proposta", proposta expirada, Essencial |
+| `acessibilidade.mjs` | auditoria axe-core (WCAG 2 A/AA) nas páginas principais e na página da proposta |
 | `scripts/testar-rls.mjs` | isolamento entre contas (RLS) |
 
 As capturas de ecrã e os registos ficam em `tests/e2e/saida/`, que o git ignora.

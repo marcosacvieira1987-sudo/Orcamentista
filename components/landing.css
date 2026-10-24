@@ -194,3 +194,6 @@
 .lp-plano-top{background:linear-gradient(160deg,#34322F,#1E1D1B);border-color:rgba(185,145,95,.45);box-shadow:0 30px 60px rgba(30,29,27,.28),inset 0 1px 0 rgba(255,255,255,.08)}
 .lp-selo{background:var(--lp-sol);color:var(--lp-noite)}
 .lp-assina{display:block;font:500 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--lp-stone);margin-top:3px}
+
+.lp-nav .lp-assina{color:#E2DCD0}
+.lp-pe .lp-assina{color:#CFC9BE}

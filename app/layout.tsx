@@ -7,7 +7,7 @@ import './globals.css';
 const sans = Instrument_Sans({ subsets: ['latin', 'latin-ext'], axes: ['wdth'], variable: '--letra-sans', display: 'swap' });
 const mono = Geist_Mono({ subsets: ['latin', 'latin-ext'], variable: '--letra-mono', display: 'swap' });
 
-export const metadata: Metadata = { title: PRODUTO, description: SLOGAN, appleWebApp: { capable: true, title: 'Prumo', statusBarStyle: 'default' } };
+export const metadata: Metadata = { metadataBase: new URL(process.env.SITE_URL || 'https://orcamentista-coral.vercel.app'), title: PRODUTO, description: SLOGAN, appleWebApp: { capable: true, title: 'Prumo', statusBarStyle: 'default' } };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#F6F2EA' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

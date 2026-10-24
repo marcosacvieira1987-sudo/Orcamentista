@@ -229,7 +229,7 @@ export default function ConfigForm({ inicial, userId, email, marca }: { inicial:
   const mudarP = (i: number, k: keyof LinhaP, v: string) => { setPrecos((ps) => ps.map((p, j) => (j === i ? { ...p, [k]: v } : p))); setSujo(true); };
 
   return (
-    <div className="cfg">
+    <main className="cfg">
       <section className="intro"><span className="eyebrow">Só você vê esta área</span><h1>Empresa</h1><p className="lead">Estes dados entram em todas as propostas.</p></section>
       <section className="sheet" aria-labelledby="cfg-h-emp">
         <div className="sh-h"><h2 id="cfg-h-emp">Dados da empresa</h2></div>
@@ -362,6 +362,6 @@ export default function ConfigForm({ inicial, userId, email, marca }: { inicial:
         {estado ? <p className={'small ' + (/guardada|descarregado/i.test(estado) ? 'ok-msg' : /A gerar/.test(estado) ? 'muted' : 'erro')} role="status">{estado}</p> : null}
         <div className="row"><button className="btn lg" onClick={pdfExemplo}>PDF de exemplo</button><button className="btn primary lg grow" disabled={aGuardar} onClick={guardar}>{aGuardar ? 'A guardar…' : sujo ? 'Guardar' : 'Guardado'}</button></div>
       </div>
-    </div>
+    </main>
   );
 }

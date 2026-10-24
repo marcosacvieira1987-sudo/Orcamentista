@@ -12,7 +12,9 @@ const valido = (t: string) => /^[0-9a-f]{32,128}$/.test(t);
 async function ler(token: string) {
   if (!valido(token)) return null;
   const { data } = await supabaseAdmin().from('propostas').select('*').eq('token', token).maybeSingle();
-  return data;
+  // uma cópia incompleta (por exemplo, gravada à mão) conta como inexistente
+  const d = data?.dados as Partial<Instantaneo> | undefined;
+  return d?.orc?.capitulos && d.meta && d.empresa && Array.isArray(d.fotos) ? data : null;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {

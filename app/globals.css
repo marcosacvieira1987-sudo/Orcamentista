@@ -608,3 +608,12 @@ a{color:inherit}
   .wm-main.long{font-size:14px}
   .menu a,.menu button{font-size:13px;padding:0 6px}
 }
+
+/* páginas de erro e esqueletos de carregamento */
+.erro-pagina .row{margin-top:4px}
+.esq{border-radius:14px;background:linear-gradient(90deg,var(--surface-2),var(--hair) 50%,var(--surface-2));background-size:200% 100%;animation:esq 1.2s ease-in-out infinite}
+.esq-topo{height:56px;margin:12px 0 26px}
+.esq-titulo{height:44px;width:60%;margin-bottom:20px}
+.esq-cartao{height:150px}
+@keyframes esq{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.esq{animation:none}}
