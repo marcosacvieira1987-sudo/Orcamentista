@@ -45,14 +45,15 @@ export const SITE = {
     titulo: 'Uma proposta que ganha obras.',
     texto: 'Clara para o cliente, completa para si: o que encontrou, o que vai fazer, quanto custa e como se paga.',
     paginas: [
-      { src: '/landing/pagina-01.webp', legenda: 'Capa com a sua marca' },
-      { src: '/landing/pagina-03.webp', legenda: 'Carta de apresentação' },
-      { src: '/landing/pagina-04.webp', legenda: 'Resumo por fases' },
-      { src: '/landing/pagina-06.webp', legenda: 'Capítulos detalhados' },
-      { src: '/landing/pagina-10.webp', legenda: 'Garantia e seguro' },
-      { src: '/landing/pagina-11.webp', legenda: 'Adjudicação e pagamentos' },
+      // as páginas verdadeiras da proposta de exemplo, fotografadas na mesma mesa e com a mesma luz
+      { src: '/landing/foto-capa.webp', legenda: 'Capa com a sua marca' },
+      { src: '/landing/foto-carta.webp', legenda: 'Carta de apresentação' },
+      { src: '/landing/foto-resumo.webp', legenda: 'Resumo por fases' },
+      { src: '/landing/foto-capitulos.webp', legenda: 'Capítulos detalhados' },
+      { src: '/landing/foto-condicoes.webp', legenda: 'Garantia e seguro' },
+      { src: '/landing/foto-adjudicacao.webp', legenda: 'Adjudicação e pagamentos' },
     ],
-    nota: 'Exemplo com empresa e valores fictícios.',
+    nota: 'Páginas da proposta completa, do plano Premium. A proposta rápida, nos outros planos, tem resumo, mapa de quantidades e condições. Exemplo com empresa e valores fictícios.',
   },
   funcoes: [
     { icone: 'foto', titulo: 'Lê as fotografias', texto: 'Identifica o estado da obra e os trabalhos prováveis, foto a foto.' },
@@ -119,9 +120,11 @@ export const SITE = {
   final: { titulo: 'O próximo orçamento pode estar pronto hoje.', cta: 'Começar agora' },
   // Outros negócios: preencher quando houver os dados. Com null, a secção não aparece.
   negocio: null as Negocio | null,
-  // Vídeo do hero (sem texto; os textos ficam por cima, em código). Pôr o ficheiro em public/landing/
-  // e indicar aqui o caminho, ex.: { mp4: '/landing/hero.mp4', poster: '/landing/hero.jpg' }. Vazio: sem vídeo.
-  video: { mp4: '', poster: '' },
+  // Filme do hero, "A Linha" (sem texto; os textos ficam por cima, em código). Corre no site, no ecrã "Entrar"
+  // e, só o ato 3 em loop, no ecrã de planos. `cartas`: segundo em que as cartas finais ficam paradas e
+  // passam a ser a interface. Vazio: sem vídeo.
+  video: { mp4: '/landing/a-linha.mp4', poster: '/landing/a-linha.webp', cartas: 9.4 },
+  videoPlanos: { mp4: '/landing/a-linha-ato3.mp4', poster: '/landing/a-linha-ato3.webp' },
   // Email ou página de contacto público. Vazio: não aparece no rodapé.
   contacto: 'mmgs.geral@gmail.com',
   // Quem vende o serviço (aparece nos termos e na privacidade). Preencher antes de cobrar.
