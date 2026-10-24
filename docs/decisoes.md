@@ -90,3 +90,25 @@ Atualizado a 23 out 2026. Fonte: documento "Prumo — Decisões do produto".
   - Stripe em modo real;
   - um teste completo, do registo ao pagamento.
 - **Base de dados de produção:** correr `supabase/atualizar-producao.sql` (0002 a 0007).
+
+## Decisões tomadas pelo Claude (para rever)
+
+Cada uma passou por duas etapas: a primeira ideia, uma revisão para confirmar se havia dúvida real, e a solução escolhida. Todas se mudam facilmente; diga qual quer diferente.
+
+| Tema | Escolha | Porquê (revisão) |
+|---|---|---|
+| Funções ainda por fazer nos planos | Marcar como "em breve" até existirem (hoje já não há nenhuma) | Nunca prometer o que o app não faz |
+| Limite de montagens | O mesmo orçamento monta-se de raiz até 5 vezes por mês; ajustes sem limite | Impede usar um orçamento como "caixa" para vários e contornar o limite mensal |
+| Textos pela IA na experiência | 3 vezes, como no Pro | A experiência tem as funções do Premium com o limite do Essencial; para os textos, o limite mais baixo de quem os tem é o do Pro |
+| Beta | Preço de lançamento e 1.º mês grátis só na primeira adesão | Coerente com "se cancelar e voltar, paga o preço normal" |
+| Mudar de plano | Feito no app, não no portal do Stripe | O portal podia mudar para o preço normal; no app mantém-se o preço de lançamento |
+| Garantia de 30 dias | Conta a partir da primeira subscrição da conta | "Só na primeira compra de cada conta" |
+| Página da proposta | Só Pro, Premium e experiência; o Essencial envia o PDF | Faz parte do espaço personalizado |
+| Cor por omissão das empresas novas | Grafite neutro (antes era azul) | Não impõe uma cor de marca a quem ainda não escolheu |
+| Visitas à página da proposta | Contadas no browser, não no servidor | A pré-visualização do link no WhatsApp e os verificadores de links do email contavam como "vista" |
+| Pré-visualização do link | Título e empresa, sem valores | O valor não aparece a quem vê a conversa |
+| Letras do site | Servidas pelo próprio site | Carregar do Google envia o IP dos visitantes (já houve condenações na UE) |
+| Tempo antes e depois (beta) | Tempo ativo no editor até à primeira aprovação, e "sem o Prumo, quanto levaria?" em cada orçamento (opcional, 1 toque) | Um único número por empresa seria pouco fiável |
+| Aceitação da proposta | Regista o nome, a nota e a data; não é assinatura | A assinatura digital fica para mais tarde, como decidido |
+| Contacto no site | `mmgs.geral@gmail.com` (das propostas da MMGS) | Até haver email com o domínio Prumo |
+| Testes | No repositório, só com dados fictícios e imagens sintéticas | Os testes antigos tinham dados reais da MMGS e fotografias de uma obra |
