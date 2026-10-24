@@ -4,7 +4,7 @@ import { lerEmpresa } from '@/lib/empresa';
 import { ErroIA, perguntarClaude, perguntarJSON, type Uso } from '@/lib/ia';
 import { ivaPadrao, juntarLeituras, normOrc, normPerguntas, type Empresa, type Estado, type Modelo, type Orc } from '@/lib/orc';
 import { promptAjuste, promptLeitura, promptMensagem, promptOrcamento, promptPerguntas, type Contexto } from '@/lib/prompts';
-import { lerAcesso, MONTAGENS_POR_ORCAMENTO, usoMensal } from '@/lib/plano';
+import { lerAcesso, MONTAGENS_POR_ORCAMENTO, usoExperimental, usoMensal } from '@/lib/plano';
 import { utilizadorAtual } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -40,9 +40,14 @@ export async function POST(req: Request) {
   // Plano: sem plano ativo a IA para; a proposta completa é só do Premium.
   if (!acesso.plano) return NextResponse.json({ code: 'sem_plano' }, { status: 402 });
   if (!acesso.completa && (corpo.acao === 'orcamento' || corpo.acao === 'ajuste') && corpo.modelo === 'completo') return NextResponse.json({ code: 'so_premium' }, { status: 403 });
-  // Limite mensal: um orçamento novo para a IA só entra se ainda houver lugar este mês.
-  if (!mes.ids.has(orcamentoId) && mes.usados >= acesso.limite) return NextResponse.json({ code: 'limite_mensal', limite: acesso.limite, renova: mes.renova.toISOString() }, { status: 402 });
-  if (corpo.acao === 'orcamento' && (mes.montagens.get(orcamentoId) || 0) >= MONTAGENS_POR_ORCAMENTO) return NextResponse.json({ code: 'montagens' }, { status: 429 });
+  // Limite: um orçamento novo para a IA só entra se ainda houver lugar. Nos planos conta o mês;
+  // no período experimental contam os 14 dias todos.
+  const exp = acesso.via === 'experimental' ? await usoExperimental(u.sb) : null;
+  const contagem = exp || mes;
+  if (!contagem.ids.has(orcamentoId) && contagem.usados >= acesso.limite) {
+    return NextResponse.json(exp ? { code: 'limite_experimental', limite: acesso.limite } : { code: 'limite_mensal', limite: acesso.limite, renova: mes.renova.toISOString() }, { status: 402 });
+  }
+  if (corpo.acao === 'orcamento' && (contagem.montagens.get(orcamentoId) || 0) >= MONTAGENS_POR_ORCAMENTO) return NextResponse.json({ code: 'montagens' }, { status: 429 });
 
   // Limite diário por utilizador (controlo de custos). As linhas só podem ser lidas e acrescentadas.
   const desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString();

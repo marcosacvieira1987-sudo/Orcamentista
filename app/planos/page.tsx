@@ -2,7 +2,7 @@ import Link from 'next/link';
 import AdminStripe from '@/components/AdminStripe';
 import Topo from '@/components/Topo';
 import { marcaDaConta } from '@/lib/marca-app';
-import { lerAcesso, usoMensal, type Acesso } from '@/lib/plano';
+import { lerAcesso, usoExperimental, usoMensal, type Acesso } from '@/lib/plano';
 import { ehAdmin, ehBeta, fmtDataLisboa as fmtData, fmtPreco, janelaLancamento, lancamentoAberto, ORDEM, PLANOS, type Periodo, type Tarifa } from '@/lib/planos';
 import { SITE } from '@/lib/site';
 import { sincronizarSubscricao, stripe, stripeConfigurado } from '@/lib/stripe';
@@ -46,6 +46,7 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
 
   const [{ data: emp }, acesso, mes] = await Promise.all([sb.from('empresas').select('nome, cor, logo_path').maybeSingle(), lerAcesso(sb, id, email), usoMensal(sb)]);
   const sit = situacao(acesso);
+  const exp = acesso.via === 'experimental' ? await usoExperimental(sb) : null;
   const marca = await marcaDaConta(sb, acesso, emp);
   const subscrito = acesso.via === 'subscricao';
 
@@ -61,7 +62,7 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
       <Topo empresa={emp?.nome} atual="planos" marca={marca} />
       <main>
         <div className="planos-palco">
-        {SITE.video.mp4 ? <video className="auth-video" autoPlay muted loop playsInline preload="metadata" poster={SITE.video.poster || undefined} aria-hidden="true"><source src={SITE.video.mp4} type="video/mp4" /></video> : null}
+        {SITE.videoPlanos.mp4 ? <video className="auth-video" autoPlay muted loop playsInline preload="metadata" poster={SITE.videoPlanos.poster || undefined} aria-hidden="true"><source src={SITE.videoPlanos.mp4} type="video/mp4" /></video> : null}
         <section className="intro"><span className="eyebrow">Subscrição</span><h1>O seu plano</h1></section>
         {pago ? <p className="callout ok-box" role="status"><strong>Pagamento recebido. Obrigado!</strong> O plano já está ativo.</p> : null}
         {q.mudou ? <p className="callout ok-box" role="status"><strong>Plano alterado.</strong> A diferença foi acertada na fatura.</p> : null}
@@ -70,8 +71,9 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
         <section className={'callout plano-sit' + (sit.tom ? ' ' + sit.tom : '')}>
           <strong>{sit.titulo}</strong>
           {sit.texto ? <p className="small">{sit.texto}</p> : null}
-          {acesso.plano && Number.isFinite(acesso.limite) ? (
-            <p className="small"><strong className="num">{mes.usados} de {acesso.limite}</strong> orçamentos com IA este mês · o contador volta a zero a {fmtData(mes.renova)}</p>
+          {acesso.plano && Number.isFinite(acesso.limite) ? (exp
+            ? <p className="small"><strong className="num">{exp.usados} de {acesso.limite}</strong> orçamentos com IA no período experimental</p>
+            : <p className="small"><strong className="num">{mes.usados} de {acesso.limite}</strong> orçamentos com IA este mês · o contador volta a zero a {fmtData(mes.renova)}</p>
           ) : null}
           {subscrito && garantiaAte && garantiaAte > new Date() ? <p className="small muted">Garantia de 30 dias até {fmtData(garantiaAte)}: se não ficar satisfeito, escreva-nos e devolvemos o valor total.</p> : null}
           {acesso.cliente ? (

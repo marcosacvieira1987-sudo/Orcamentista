@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Topo from '@/components/Topo';
 import { descObra } from '@/lib/orc';
 import { marcaDaConta } from '@/lib/marca-app';
-import { lerAcesso, usoMensal } from '@/lib/plano';
+import { lerAcesso, usoExperimental, usoMensal } from '@/lib/plano';
 import { fmtDataLisboa } from '@/lib/planos';
 import { exigirUtilizador } from '@/lib/supabase/server';
 import { fmtData, fmtEUR, maiuscula } from '@/lib/util';
@@ -33,6 +33,9 @@ export default async function Orcamentos() {
     sb.from('propostas').select('orcamento_id, vistas, aceite_em, aceite_nome')
   ]);
   const marca = await marcaDaConta(sb, acesso, emp);
+  // no período experimental o limite vale para os 14 dias todos
+  const exp = acesso.via === 'experimental' ? await usoExperimental(sb) : null;
+  const usados = (exp || mes).usados;
   const pub = new Map<string, Pub>(((pubs || []) as Pub[]).map((p) => [p.orcamento_id, p]));
   const aceitesRecentes = ((pubs || []) as Pub[]).filter((p) => p.aceite_em && Date.now() - new Date(p.aceite_em).getTime() < 14 * 86400000);
   // custo de IA por orçamento (vazio enquanto a migração 0002 não estiver aplicada)
@@ -75,9 +78,11 @@ export default async function Orcamentos() {
 
         {acesso.via === 'nenhum' ? (
           <section className="callout crit"><strong>Sem plano ativo</strong><p className="small">Os seus orçamentos continuam disponíveis, mas a IA está em pausa.</p><div><Link className="btn primary sm" href="/planos">Escolher um plano</Link></div></section>
+        ) : exp && exp.usados >= acesso.limite ? (
+          <section className="callout warn"><strong>Usou os {acesso.limite} orçamentos com IA do período experimental</strong><p className="small">Os orçamentos já começados continuam a funcionar, com os ajustes. Para fazer orçamentos novos com a IA, escolha um plano.</p><div><Link className="btn sm" href="/planos">Ver planos</Link></div></section>
         ) : acesso.via === 'experimental' && acesso.diasExperimental <= 5 ? (
           <section className="callout warn"><strong>{acesso.diasExperimental === 1 ? 'Falta 1 dia' : `Faltam ${acesso.diasExperimental} dias`} do período experimental</strong><p className="small">Escolha um plano para continuar a usar a IA sem interrupções.</p><div><Link className="btn sm" href="/planos">Ver planos</Link></div></section>
-        ) : acesso.plano && mes.usados >= acesso.limite ? (
+        ) : acesso.plano && !exp && mes.usados >= acesso.limite ? (
           <section className="callout warn"><strong>Usou os {acesso.limite} orçamentos com IA deste mês</strong><p className="small">A IA volta a {fmtDataLisboa(mes.renova)}. Os orçamentos já começados continuam a funcionar. Para continuar já com orçamentos novos, suba de plano.</p><div><Link className="btn sm" href="/planos">Ver planos</Link></div></section>
         ) : acesso.via === 'subscricao' && acesso.estado === 'past_due' ? (
           <section className="callout crit"><strong>O último pagamento falhou</strong><p className="small">Atualize o cartão para não perder o acesso.</p><div><Link className="btn sm" href="/planos">Resolver</Link></div></section>
@@ -104,7 +109,7 @@ export default async function Orcamentos() {
 
         {orcs.length ? (
           <section className="resumo-30" aria-label="Últimos 30 dias">
-            {acesso.plano ? <div className="r-ia"><strong className="num">{mes.usados}{Number.isFinite(acesso.limite) ? <small> de {acesso.limite}</small> : null}</strong><span>orçamentos com IA este mês</span>{Number.isFinite(acesso.limite) ? <i className="r-barra" aria-hidden="true"><b style={{ width: `${Math.min(100, (mes.usados / acesso.limite) * 100)}%` }} /></i> : null}</div> : null}
+            {acesso.plano ? <div className="r-ia"><strong className="num">{usados}{Number.isFinite(acesso.limite) ? <small> de {acesso.limite}</small> : null}</strong><span>{exp ? 'orçamentos com IA na experiência' : 'orçamentos com IA este mês'}</span>{Number.isFinite(acesso.limite) ? <i className="r-barra" aria-hidden="true"><b style={{ width: `${Math.min(100, (usados / acesso.limite) * 100)}%` }} /></i> : null}</div> : null}
             <div><strong className="num">{recentes.length}</strong><span>orçamentos em 30 dias</span></div>
             <div><strong className="num">{enviados.length}</strong><span>enviados ao cliente</span></div>
             <div><strong className="num">{fmtEUR(valorEnviado).replace(/,\d\d €$/, ' €')}</strong><span>em propostas enviadas</span></div>

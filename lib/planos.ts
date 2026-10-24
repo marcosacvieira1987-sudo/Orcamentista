@@ -21,8 +21,9 @@ export const PLANOS: Record<PlanoId, Def> = {
 };
 export const ORDEM: PlanoId[] = ['essencial', 'pro', 'premium'];
 
-// 14 dias grátis: funções do Premium com o limite do Essencial
-export const LIMITE_EXPERIMENTAL = PLANOS.essencial.limite;
+// 14 dias grátis: funções do Premium com 2 orçamentos com IA para o período todo (decisão de 24 out 2026).
+// Chega para experimentar e usar numa obra a sério; custo máximo de cerca de 0,74 € de IA por conta.
+export const LIMITE_EXPERIMENTAL = 2;
 export const LIMITE_TEXTOS_EXPERIMENTAL = PLANOS.pro.textosIA;
 
 export const ehPlano = (v: unknown): v is PlanoId => v === 'essencial' || v === 'pro' || v === 'premium';
