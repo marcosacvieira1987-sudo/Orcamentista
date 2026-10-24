@@ -50,6 +50,7 @@ export default function Termos() {
 
       <h2>10. A inteligência artificial e as suas propostas</h2>
       <p>O esboço feito pela inteligência artificial é uma ajuda e pode conter erros de leitura, de medição ou de preço. Antes de enviar uma proposta, o profissional revê e confirma quantidades, preços, textos e condições, e é o único responsável pelo que propõe ao seu cliente.</p>
+      <p>Nos planos Pro e Premium, a proposta pode ser enviada como página, onde o cliente a pode aceitar. Essa aceitação regista o nome indicado pelo cliente e a data; não é uma assinatura digital qualificada nem substitui o contrato de empreitada, que o profissional celebra com o seu cliente. O profissional é responsável pelo conteúdo que envia e pela relação com o cliente.</p>
 
       <h2>11. Os seus dados</h2>
       <p>Os dados da empresa, o preçário, os orçamentos e as fotografias são seus. Usamo-los só para prestar o serviço, como descrito na <Link href="/privacidade">política de privacidade</Link>. Pode descarregá-los ou apagar a conta a qualquer momento; apagar a conta cancela também a subscrição.</p>

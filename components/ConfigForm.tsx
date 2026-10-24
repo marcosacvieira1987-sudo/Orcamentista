@@ -209,8 +209,11 @@ export default function ConfigForm({ inicial, userId, email, marca }: { inicial:
 
   // RGPD: portabilidade (exportar) e apagamento (apagar a conta).
   async function exportar() {
-    const [{ data: emp }, { data: orcs }] = await Promise.all([sb.from('empresas').select('*').single(), sb.from('orcamentos').select('*')]);
-    const blob = new Blob([JSON.stringify({ exportado_em: new Date().toISOString(), conta: email, empresa: emp, orcamentos: orcs }, null, 2)], { type: 'application/json' });
+    const [{ data: emp }, { data: orcs }, { data: pubs }, { data: ass }] = await Promise.all([
+      sb.from('empresas').select('*').single(), sb.from('orcamentos').select('*'),
+      sb.from('propostas').select('*'), sb.from('assinaturas').select('plano, estado, periodo, lancamento, periodo_fim, primeira_compra, experimental_ate'),
+    ]);
+    const blob = new Blob([JSON.stringify({ exportado_em: new Date().toISOString(), conta: email, empresa: emp, orcamentos: orcs, propostas_publicadas: pubs || [], subscricao: ass || [] }, null, 2)], { type: 'application/json' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `dados-${PRODUTO.replace(/\s+/g, '-')}.json`; a.click();
   }
   async function apagarConta() {

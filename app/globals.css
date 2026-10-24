@@ -10,8 +10,8 @@ Atelier: chão de cal, folhas brancas com filetes, tinta grafite e um só acento
   --off-bg:#D8CDBB;--off-ink:#FFFFFF;--hatch-a:#EAE3D7;--hatch-b:#F1ECE3;
   --on-bg:#22211F;--on-ink:#FFFFFF;
   --shadow:0 1px 2px rgba(16,19,21,.08),0 14px 32px rgba(16,19,21,.12);
-  --sans:"Instrument Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-  --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:var(--letra-sans),"Instrument Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:var(--letra-mono),"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   color-scheme:light;
 }
 /* O app é sempre claro (bom contraste, legível ao sol). O tema escuro só com data-theme="dark". */
@@ -594,3 +594,17 @@ a{color:inherit}
 .planos-palco .callout.warn{box-shadow:inset 3px 0 0 #E2B25E}
 .planos-palco .muted{color:rgba(244,239,230,.72)}
 @supports (backdrop-filter:blur(1px)){.planos-palco .callout{backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%)}}
+.metricas{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0;margin:0}
+.metricas dt,.metricas dd{padding:10px 16px;border-top:1px solid var(--hair);margin:0}
+.metricas dt{color:var(--muted);font-size:14px}
+.metricas dd{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.antes .chips{margin-top:6px}
+
+/* topo no telemóvel: nomes longos em 2 linhas no máximo, menu compacto */
+.wm-main.long{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+@media (max-width:420px){
+  .top .brand{max-width:34vw}
+  .top .brand img{max-height:34px;max-width:100%}
+  .wm-main.long{font-size:14px}
+  .menu a,.menu button{font-size:13px;padding:0 6px}
+}

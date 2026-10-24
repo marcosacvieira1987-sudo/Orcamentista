@@ -30,6 +30,7 @@ export default function AdminStripe() {
   return (
     <section className="sheet admin-stripe" aria-labelledby="adm-h">
       <div className="sh-h"><h2 id="adm-h">Administração do Stripe</h2>{estado ? <span className={'estado ' + (estado.modo === 'real' ? 'enviado' : 'rascunho')}>{estado.modo === 'real' ? 'Modo real' : 'Modo de teste'}</span> : null}</div>
+      <div className="sh-f small"><a href="/admin">Ver as métricas do produto (beta, tempo por orçamento, custos)</a></div>
       <div className="sh-f">
         {estado ? (
           <ul className="small">
