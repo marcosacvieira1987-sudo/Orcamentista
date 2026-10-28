@@ -23,6 +23,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
   if (!p) return new Response('Não encontrado', { status: 404 });
   if (p.aceite_em) return volta('');
   const snap = p.dados as Instantaneo;
+  if (!snap?.orc || !snap.meta || !snap.empresa) return new Response('Não encontrado', { status: 404 });
   if (validadeDe(snap.meta, snap.empresa).expirada) return volta('?erro=expirada');
 
   const agora = new Date().toISOString();

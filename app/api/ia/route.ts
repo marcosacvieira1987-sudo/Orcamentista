@@ -4,7 +4,7 @@ import { lerEmpresa } from '@/lib/empresa';
 import { ErroIA, perguntarClaude, perguntarJSON, type Uso } from '@/lib/ia';
 import { ivaPadrao, juntarLeituras, normOrc, normPerguntas, type Empresa, type Estado, type Modelo, type Orc } from '@/lib/orc';
 import { promptAjuste, promptLeitura, promptMensagem, promptOrcamento, promptPerguntas, type Contexto } from '@/lib/prompts';
-import { lerAcesso, MONTAGENS_POR_ORCAMENTO, usoExperimental, usoMensal } from '@/lib/plano';
+import { contaNaExperiencia, lerAcesso, MONTAGENS_POR_ORCAMENTO, usoExperimental, usoMensal } from '@/lib/plano';
 import { supabaseAdmin, utilizadorAtual } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -41,16 +41,16 @@ export async function POST(req: Request) {
   if (!acesso.plano) return NextResponse.json({ code: 'sem_plano' }, { status: 402 });
   if (!acesso.completa && (corpo.acao === 'orcamento' || corpo.acao === 'ajuste') && corpo.modelo === 'completo') return NextResponse.json({ code: 'so_premium' }, { status: 403 });
   // Limite: um orçamento novo para a IA só entra se ainda houver lugar. Nos planos conta o mês;
-  // no período experimental contam os 14 dias todos.
-  const exp = acesso.via === 'experimental' ? await usoExperimental(u.sb) : null;
+  // no período experimental (e até à 1.ª cobrança de quem subscreveu nele) contam os 14 dias todos.
+  const exp = contaNaExperiencia(acesso) ? await usoExperimental(u.sb) : null;
   const contagem = exp || mes;
   if (!contagem.ids.has(orcamentoId) && contagem.usados >= acesso.limite) {
-    return NextResponse.json(exp ? { code: 'limite_experimental', limite: acesso.limite } : { code: 'limite_mensal', limite: acesso.limite, renova: mes.renova.toISOString() }, { status: 402 });
+    return NextResponse.json(exp ? { code: acesso.ateAoPagamento ? 'limite_ate_pagar' : 'limite_experimental', limite: acesso.limite } : { code: 'limite_mensal', limite: acesso.limite, renova: mes.renova.toISOString() }, { status: 402 });
   }
   if (corpo.acao === 'orcamento' && (contagem.montagens.get(orcamentoId) || 0) >= MONTAGENS_POR_ORCAMENTO) return NextResponse.json({ code: 'montagens' }, { status: 429 });
 
   // Limite diário por utilizador (controlo de custos). O pedido fica reservado ANTES de chamar o Claude,
-  // numa só transação e com a chave secreta (migração 0007): pedidos em simultâneo não passam todos,
+  // numa só transação e com a chave secreta (migração 0008): pedidos em simultâneo não passam todos,
   // e a sessão do utilizador não consegue impedir o registo. Se a reserva falhar, a IA não corre.
   let admin: SupabaseClient;
   let reserva: number | null;

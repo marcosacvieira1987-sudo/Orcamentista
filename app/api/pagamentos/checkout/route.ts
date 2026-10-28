@@ -18,7 +18,7 @@ export async function POST(req: Request) {
 
   const admin = supabaseAdmin();
   const [{ data: ass }, { data: emp }] = await Promise.all([
-    admin.from('assinaturas').select('stripe_customer, stripe_subscription, estado').eq('user_id', u.id).maybeSingle(),
+    admin.from('assinaturas').select('stripe_customer, stripe_subscription, estado, experimental_ate').eq('user_id', u.id).maybeSingle(),
     u.sb.from('empresas').select('nome').maybeSingle(),
   ]);
   // já tem subscrição: mudar de plano faz-se no app, sem pagar duas vezes
@@ -27,6 +27,10 @@ export async function POST(req: Request) {
   // preço de lançamento: dentro das datas, ou para a beta na primeira adesão (com o 1.º mês grátis)
   const beta = ehBeta(u.email) && !ass?.stripe_subscription;
   const tarifa = lancamentoAberto() || beta ? 'lancamento' : 'normal';
+  // Quem subscreve durante os 14 dias grátis mantém os dias que faltam: a primeira cobrança é no fim.
+  // (O Stripe pede pelo menos 48 h; com menos, cobra já.) A beta tem o 1.º mês grátis.
+  const fimExp = ass?.experimental_ate ? Math.floor(new Date(ass.experimental_ate).getTime() / 1000) : 0;
+  const gratis = beta ? { trial_period_days: 30 } : fimExp > Math.floor(Date.now() / 1000) + 49 * 3600 ? { trial_end: fimExp } : {};
 
   try {
     const [preco, taxa] = await Promise.all([idPreco(plano, periodo, tarifa), taxaIva()]);
@@ -44,7 +48,7 @@ export async function POST(req: Request) {
       customer,
       client_reference_id: u.id,
       line_items: [{ price: preco, quantity: 1, ...(taxa ? { tax_rates: [taxa] } : {}) }],
-      subscription_data: { metadata: { user_id: u.id, plano }, ...(beta ? { trial_period_days: 30 } : {}) },
+      subscription_data: { metadata: { user_id: u.id, plano }, ...gratis },
       // fatura em nome da empresa, com NIF e morada
       billing_address_collection: 'required',
       tax_id_collection: { enabled: true },

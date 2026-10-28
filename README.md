@@ -54,9 +54,9 @@ A lógica, os prompts e o desenho vêm do protótipo `Orçamentista` (HTML únic
    - `supabase/migrations/0004_assinaturas.sql` — subscrições e período experimental (ver [`docs/pagamentos.md`](docs/pagamentos.md)).
    - `supabase/migrations/0005_planos_lancamento.sql` — plano Essencial, período mensal/anual, preço de lançamento e garantia.
    - `supabase/migrations/0006_espaco_personalizado.sql` — marca, textos, modelo de apresentação e página da proposta para o cliente.
-   - `supabase/migrations/0007_reservar_uso_ia.sql` — limite diário da IA reservado antes de cada chamada. **Aplique antes de publicar o código que a usa**: sem ela, a IA responde "indisponível" (falha fechada).
-
-   Numa base que já existe, basta correr `supabase/atualizar-producao.sql` (0002 a 0007, seguro de repetir).
+   - `supabase/migrations/0007_propostas_do_dono.sql` — só se publica a proposta de um orçamento da própria conta.
+   - `supabase/migrations/0008_reservar_uso_ia.sql` — limite diário da IA reservado antes de cada chamada. **Aplique antes de publicar o código que a usa**: sem ela, a IA responde "indisponível" (falha fechada).
+   - Em produção, basta correr `supabase/atualizar-producao.sql`, que junta 0002 a 0008 (seguro de repetir).
 3. *Authentication → URL Configuration*:
    - **Site URL**: o endereço da app (ex.: `https://prumo.vercel.app`).
    - **Redirect URLs**: `https://prumo.vercel.app/auth/confirmar` (e `http://localhost:3000/auth/confirmar` para desenvolvimento).
@@ -83,7 +83,8 @@ npm install
 npx supabase start            # Supabase local (Docker); aplica a migração
 # copie para .env.local o URL e as chaves que o comando mostra, e a sua ANTHROPIC_API_KEY
 npm run dev
-node scripts/testar-rls.mjs   # 34 verificações de isolamento entre contas
+node scripts/testar-rls.mjs   # 35 verificações de isolamento entre contas
+bash tests/e2e/correr.sh      # testes de ponta a ponta (ver tests/e2e/README.md)
 ```
 
 ## Depois do MVP

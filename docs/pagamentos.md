@@ -6,6 +6,7 @@ As regras de negócio estão em [`decisoes.md`](decisoes.md). O código está pr
 
 - **Planos:** Essencial, Pro e Premium. Pagamento mensal ou anual, que vale 10 meses. Preços, limites e datas estão num só ficheiro, `lib/planos.ts`.
 - **Conta nova:** 14 dias grátis, sem cartão, com as funções do Premium e 2 orçamentos com IA para os 14 dias todos (`LIMITE_EXPERIMENTAL`; não volta a zero no dia 1). Ajustes ao mesmo orçamento não contam outra vez.
+- **Subscrever durante os 14 dias:** os dias grátis que faltam mantêm-se e a primeira cobrança é no fim (se faltarem mais de 2 dias, porque o Stripe pede pelo menos 48 h). Até ao primeiro pagamento continua com o limite da experiência (2 orçamentos com IA); na página Plano, "Começar já" acaba os dias grátis, cobra nesse momento e liberta o plano todo. Os colegas da beta ficam de fora: têm o plano todo no 1.º mês grátis.
 - **Limite mensal:** "X de Y orçamentos com IA este mês" aparece na lista e na página Plano. Ao chegar ao limite, a IA pausa para orçamentos novos até dia 1. Os ajustes a orçamentos já começados continuam.
 - **Preço de lançamento:**
   - à venda só entre `LANCAMENTO_INICIO` e `LANCAMENTO_FIM`;
@@ -14,13 +15,13 @@ As regras de negócio estão em [`decisoes.md`](decisoes.md). O código está pr
 - **Mudar de plano ou de período:** faz-se na página Plano. A diferença é cobrada ou creditada na hora.
 - **Portal do Stripe:** o botão "Pagamento, faturas e cancelamento" abre-o, para mudar o cartão, ver faturas ou cancelar. O cancelamento tem efeito no fim do período pago.
 - **Sem plano:** os orçamentos e os PDF ficam acessíveis, mas a IA para.
-- **Garantia de 30 dias:** só na primeira compra de cada conta. A data da primeira compra fica guardada e a página Plano mostra até quando vale. O reembolso faz-se à mão (ver abaixo).
+- **Garantia de 30 dias:** só na primeira compra de cada conta, a contar do primeiro pagamento. A data fica guardada e a página Plano mostra até quando vale. O reembolso faz-se à mão (ver abaixo).
 
 ## 1. Base de dados (Supabase)
 
-Supabase → **SQL Editor** → New query → cole todo o conteúdo de `supabase/atualizar-producao.sql` → **Run**. Deve aparecer "Base de dados atualizada (0002 a 0006)".
+Supabase → **SQL Editor** → New query → cole todo o conteúdo de `supabase/atualizar-producao.sql` → **Run**. Deve aparecer "Base de dados atualizada (0002 a 0008)".
 
-Este ficheiro junta as migrações 0002 a 0006 e pode correr mais do que uma vez: o que já existir fica como está.
+Este ficheiro junta as migrações 0002 a 0008 e pode correr mais do que uma vez: o que já existir fica como está.
 
 ## 2. Conta Stripe
 

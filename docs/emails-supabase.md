@@ -12,7 +12,9 @@ Supabase → **Authentication → Emails → Templates**. Em cada modelo, substi
 <h2>Bem-vindo ao Prumo Orçamentista</h2>
 <p>Obrigado pelo registo. Para ativar a sua conta, confirme o seu email:</p>
 <p><a href="{{ .ConfirmationURL }}">Confirmar email</a></p>
+<p>Tem 14 dias para experimentar tudo, sem cartão. Comece pelos dados da empresa e pelo preçário: a IA usa os seus preços.</p>
 <p>Se não criou esta conta, pode ignorar este email.</p>
+<p style="color:#5F5B54;font-size:12px">Prumo, por MMGS</p>
 ```
 
 ## Reset password (recuperar palavra-passe)

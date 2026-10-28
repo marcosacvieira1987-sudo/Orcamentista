@@ -60,7 +60,15 @@ export type Estado = {
   medidas: Medida[] | null; orc: Orc | null;
   meta: Meta; revisto: boolean; aprovado: boolean; mensagem: string;
   modelo?: Modelo; mostrar_precos?: MostrarPrecos;
+  tempo?: Tempo;
+  exemplo?: boolean; // orçamento de exemplo, com valores fictícios: não se envia a clientes nem conta nas métricas
 };
+// Medida da beta: tempo ativo no editor (segundos), tempo até à primeira aprovação e a estimativa
+// do profissional de quanto levaria sem o Prumo. Só se usa em números agregados.
+export type Tempo = { ativo_s: number; aprovado_s?: number; antes?: string };
+// Respostas a "sem o Prumo, quanto tempo levaria?" e o ponto médio de cada uma, em minutos.
+export const TEMPO_ANTES = ['Menos de 30 min', '30 min a 1 h', '1 a 2 h', '2 a 4 h', 'Mais de 4 h'];
+export const MINUTOS_ANTES: Record<string, number> = { 'Menos de 30 min': 20, '30 min a 1 h': 45, '1 a 2 h': 90, '2 a 4 h': 180, 'Mais de 4 h': 300 };
 
 export const EMPRESA_VAZIA: Empresa = {
   nome: '', nif: '', telefone: '', email: '', site: '', morada: '', alvara: '', seguro: '', cor: '#2B2A28', logo_path: null,

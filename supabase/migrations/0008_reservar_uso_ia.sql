@@ -1,4 +1,4 @@
--- 0007: limite diário da IA à prova de pedidos em simultâneo. Seguro de repetir.
+-- 0008: limite diário da IA à prova de pedidos em simultâneo. Seguro de repetir.
 -- Requer a 0002 (colunas de custo em uso_ia). Supabase → SQL Editor → New query → colar tudo → Run.
 --
 -- Antes, o servidor contava os pedidos das últimas 24 h, chamava o Claude e só no fim registava o uso,

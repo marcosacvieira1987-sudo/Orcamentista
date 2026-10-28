@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   if (!acesso.plano) return NextResponse.json({ code: 'sem_plano' }, { status: 402 });
   if (!acesso.marca) return NextResponse.json({ code: 'so_pro' }, { status: 403 });
   if (usados >= acesso.limiteTextos) return NextResponse.json({ code: 'limite_textos', limite: acesso.limiteTextos }, { status: 402 });
-  // Limite diário reservado antes de chamar o Claude (migração 0007), como em /api/ia. Se a reserva falhar, a IA não corre.
+  // Limite diário reservado antes de chamar o Claude (migração 0008), como em /api/ia. Se a reserva falhar, a IA não corre.
   let admin: SupabaseClient;
   let reserva: number | null;
   try {

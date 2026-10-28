@@ -1,6 +1,6 @@
 # Decisões do Prumo Orçamentista
 
-Atualizado a 24 out 2026. Fonte: documento "Prumo — Decisões do produto".
+Atualizado a 28 out 2026. Fonte: documento "Prumo — Decisões do produto".
 
 ## Planos (preços por mês, sem IVA; IVA de 23%)
 
@@ -15,6 +15,7 @@ Atualizado a 24 out 2026. Fonte: documento "Prumo — Decisões do produto".
 - Conta como 1 orçamento com IA cada orçamento em que a IA trabalha pela primeira vez nesse mês de calendário. Ajustes ao mesmo orçamento não contam outra vez. Um orçamento duplicado conta como novo quando a IA trabalha nele.
 - O limite diário de 80 pedidos à IA (LIMITE_IA_DIA) fica como travão de segurança.
 - Período experimental (decidido a 24 out 2026): 14 dias grátis, sem cartão, com as funções do Premium e 2 orçamentos com IA para o período todo, que não voltam a zero no dia 1. Custo máximo de cerca de 0,74 € de IA por conta. Ajustes ao mesmo orçamento não contam outra vez.
+- Subscrever durante os 14 dias grátis (decidido a 28 out 2026): os dias que faltam mantêm-se e a primeira cobrança é no fim. Até lá continua a experiência (funções do Premium e 2 orçamentos com IA). "Começar já", na página Plano, acaba os dias grátis, cobra nesse momento e liberta o plano todo; se o banco recusar, fica tudo como estava. Os colegas da beta ficam de fora: têm o plano todo no 1.º mês grátis.
 - A app mostra "X de Y orçamentos este mês". Ao chegar ao limite, a IA pausa até ao mês seguinte, com uma mensagem a sugerir subir de plano.
 
 ## Lançamento (Black Friday)
@@ -90,9 +91,33 @@ Atualizado a 24 out 2026. Fonte: documento "Prumo — Decisões do produto".
   - revisão jurídica;
   - Stripe em modo real;
   - um teste completo, do registo ao pagamento.
-- **Base de dados de produção:** correr `supabase/atualizar-producao.sql` (0002 a 0007; seguro de repetir). A 0007 tem de estar na base de dados antes de publicar o ramo `seguranca-ia-e-conta`: sem ela, a IA responde "indisponível".
+- **Base de dados de produção:** correr `supabase/atualizar-producao.sql` (0002 a 0008; seguro de repetir). A 0008 tem de estar na base de dados antes de publicar este código: sem ela, a IA responde "indisponível".
 - **Segurança (24 out 2026):**
   - links de email só para destinos fixos;
   - a conta só se apaga depois dos ficheiros todos;
   - o limite diário da IA fica reservado antes de cada chamada, também nos textos da marca;
   - Stripe 23.0.1.
+
+## Decisões tomadas pelo Claude (para rever)
+
+Cada uma passou por duas etapas: a primeira ideia, uma revisão para confirmar se havia dúvida real, e a solução escolhida. Todas se mudam facilmente; diga qual quer diferente.
+
+| Tema | Escolha | Porquê (revisão) |
+|---|---|---|
+| Funções ainda por fazer nos planos | Marcar como "em breve" até existirem (hoje já não há nenhuma) | Nunca prometer o que o app não faz |
+| Limite de montagens | O mesmo orçamento monta-se de raiz até 5 vezes por mês; ajustes sem limite | Impede usar um orçamento como "caixa" para vários e contornar o limite mensal |
+| Textos pela IA na experiência | 3 vezes, como no Pro | A experiência tem as funções do Premium; para os textos, o limite mais baixo de quem os tem é o do Pro |
+| Beta | Preço de lançamento e 1.º mês grátis só na primeira adesão | Coerente com "se cancelar e voltar, paga o preço normal" |
+| Mudar de plano | Feito no app, não no portal do Stripe | O portal podia mudar para o preço normal; no app mantém-se o preço de lançamento |
+| Garantia de 30 dias | Conta a partir do primeiro pagamento da conta | "Só na primeira compra de cada conta"; durante os dias grátis ainda não há nada a reembolsar |
+| Subscrever durante os 14 dias grátis | Os dias que faltam mantêm-se; a primeira cobrança é no fim da experiência. Até lá valem os 2 orçamentos da experiência; "Começar já" cobra logo e liberta o plano (confirmado pelo Marcos a 28 out) | Não penaliza quem compra cedo (por exemplo, nas 72 horas do lançamento), e quem ainda não pagou não pode usar o plano todo e cancelar antes da cobrança |
+| Orçamento de exemplo | Botão "veja primeiro um orçamento de exemplo": valores fictícios, sem IA, não se envia e não conta nas métricas | Quem experimenta vê logo o resultado final sem gastar o limite |
+| Página da proposta | Só Pro, Premium e experiência; o Essencial envia o PDF | Faz parte do espaço personalizado |
+| Cor por omissão das empresas novas | Grafite neutro (antes era azul) | Não impõe uma cor de marca a quem ainda não escolheu |
+| Visitas à página da proposta | Contadas no browser, não no servidor | A pré-visualização do link no WhatsApp e os verificadores de links do email contavam como "vista" |
+| Pré-visualização do link | Título e empresa, sem valores | O valor não aparece a quem vê a conversa |
+| Letras do site | Servidas pelo próprio site | Carregar do Google envia o IP dos visitantes (já houve condenações na UE) |
+| Tempo antes e depois (beta) | Tempo ativo no editor até à primeira aprovação, e "sem o Prumo, quanto levaria?" em cada orçamento (opcional, 1 toque) | Um único número por empresa seria pouco fiável |
+| Aceitação da proposta | Regista o nome, a nota e a data; não é assinatura | A assinatura digital fica para mais tarde, como decidido |
+| Contacto no site | `mmgs.geral@gmail.com` (das propostas da MMGS) | Até haver email com o domínio Prumo |
+| Testes | No repositório, só com dados fictícios e imagens sintéticas | Os testes antigos tinham dados reais da MMGS e fotografias de uma obra |

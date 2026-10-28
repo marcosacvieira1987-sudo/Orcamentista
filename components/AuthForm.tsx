@@ -105,7 +105,7 @@ export default function AuthForm({ modo, aviso }: { modo: Modo; aviso?: string }
         {modo === 'entrar' ? <><Link href="/registar">Criar conta</Link> · <Link href="/recuperar">Esqueci-me da palavra-passe</Link></> : <Link href="/entrar">Já tenho conta: entrar</Link>}
       </p>
     </main>
-      <p className="auth-assina">{ASSINATURA}</p>
+      <footer className="auth-assina">{ASSINATURA}</footer>
     </div>
   );
 }
