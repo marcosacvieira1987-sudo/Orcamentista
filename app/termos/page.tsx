@@ -40,16 +40,17 @@ export default function Termos() {
       <p>Entre {fmtData(inicio)} e {fmtData(fim)} (hora de Lisboa) os planos estão à venda ao preço de lançamento: {ORDEM.map((p) => `${PLANOS[p].nome} ${fmtPreco(PLANOS[p].precos.lancamento.mensal)} por mês ou ${fmtPreco(PLANOS[p].precos.lancamento.anual)} por ano`).join('; ')}, mais IVA. Quem subscreve ao preço de lançamento mantém-no nas renovações e nas mudanças de plano enquanto não cancelar; se cancelar e voltar a subscrever, aplica-se o preço normal. Os participantes no programa de testes (beta) podem aderir ao preço de lançamento sem prazo, com o primeiro mês grátis.</p>
 
       <h2>7. Pagamento, renovação e mudanças de plano</h2>
-      <p>O pagamento é antecipado, mensal ou anual, processado pelo Stripe, e renova-se automaticamente até ser cancelado. Pode mudar de plano ou de período a qualquer momento no menu Plano: a diferença é calculada em proporção ao tempo que falta e cobrada ou creditada na hora. Alterações de preço são comunicadas por email com pelo menos 30 dias de antecedência e só se aplicam a partir da renovação seguinte.</p>
+      <p>O pagamento é antecipado, mensal ou anual, processado pelo Stripe, e renova-se automaticamente até ser cancelado. Se subscrever durante o período experimental, os dias grátis que faltam mantêm-se e a primeira cobrança é no fim desse período; até lá valem as condições do período experimental. Pode começar o plano mais cedo, na página Plano, com a cobrança nesse momento. Pode mudar de plano ou de período a qualquer momento no menu Plano: a diferença é calculada em proporção ao tempo que falta e cobrada ou creditada na hora. Alterações de preço são comunicadas por email com pelo menos 30 dias de antecedência e só se aplicam a partir da renovação seguinte.</p>
 
       <h2>8. Garantia de 30 dias</h2>
-      <p>Na primeira compra de cada conta, se não ficar satisfeito, pode pedir o reembolso total nos 30 dias seguintes, escrevendo para o contacto indicado no ponto 1. A garantia aplica-se uma única vez por conta.</p>
+      <p>Na primeira compra de cada conta, se não ficar satisfeito, pode pedir o reembolso total nos 30 dias seguintes ao primeiro pagamento, escrevendo para o contacto indicado no ponto 1. A garantia aplica-se uma única vez por conta.</p>
 
       <h2>9. Cancelamento e falta de pagamento</h2>
       <p>Pode cancelar a qualquer momento no menu Plano, em "Pagamento, faturas e cancelamento". O plano fica ativo até ao fim do período já pago e, fora da garantia do ponto 8, não há reembolso de períodos parciais. Se uma cobrança falhar, o Stripe tenta de novo durante alguns dias; se continuar sem pagamento, a inteligência artificial fica em pausa até o pagamento ser regularizado.</p>
 
       <h2>10. A inteligência artificial e as suas propostas</h2>
       <p>O esboço feito pela inteligência artificial é uma ajuda e pode conter erros de leitura, de medição ou de preço. Antes de enviar uma proposta, o profissional revê e confirma quantidades, preços, textos e condições, e é o único responsável pelo que propõe ao seu cliente.</p>
+      <p>Nos planos Pro e Premium, a proposta pode ser enviada como página, onde o cliente a pode aceitar. Essa aceitação regista o nome indicado pelo cliente e a data; não é uma assinatura digital qualificada nem substitui o contrato de empreitada, que o profissional celebra com o seu cliente. O profissional é responsável pelo conteúdo que envia e pela relação com o cliente.</p>
 
       <h2>11. Os seus dados</h2>
       <p>Os dados da empresa, o preçário, os orçamentos e as fotografias são seus. Usamo-los só para prestar o serviço, como descrito na <Link href="/privacidade">política de privacidade</Link>. Pode descarregá-los ou apagar a conta a qualquer momento; apagar a conta cancela também a subscrição.</p>

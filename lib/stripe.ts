@@ -71,7 +71,7 @@ export async function sincronizarSubscricao(id: string) {
 
   const item = sub.items.data[0];
   const preco = lerChavePreco(item?.price?.lookup_key);
-  const ativa = ['active', 'trialing', 'past_due'].includes(sub.status);
+  const pago = ['active', 'past_due'].includes(sub.status);
   const { error } = await admin.from('assinaturas').upsert({
     user_id: userId,
     plano: preco?.plano || null,
@@ -82,8 +82,8 @@ export async function sincronizarSubscricao(id: string) {
     cancela_no_fim: !!(sub.cancel_at_period_end || sub.cancel_at),
     stripe_customer: customer,
     stripe_subscription: sub.id,
-    // garantia de 30 dias: conta a partir da primeira compra da conta, e só dessa
-    primeira_compra: atual?.primeira_compra || (ativa ? new Date((sub.start_date || Date.now() / 1000) * 1000).toISOString() : null),
+    // garantia de 30 dias: a partir do primeiro pagamento (fim do período grátis, se houver)
+    primeira_compra: atual?.primeira_compra || (pago ? new Date((sub.trial_end || sub.start_date || Date.now() / 1000) * 1000).toISOString() : null),
     atualizado_em: new Date().toISOString(),
   }, { onConflict: 'user_id' });
   if (error) throw error;

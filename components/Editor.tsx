@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { bytesDe, carregarFoto, urlsAssinadas } from '@/lib/fotos';
-import { completarOrc, descObra, LEITURA_VAZIA, juntarLeituras, linhas, numeroProposta, partesMarca, textoSeguro, TIPOS_OBRA, totais, validadePadrao, type Empresa, type Estado, type Leitura, type Orc, type Passo, type Pergunta } from '@/lib/orc';
+import { completarOrc, TEMPO_ANTES, descObra, LEITURA_VAZIA, juntarLeituras, linhas, numeroProposta, partesMarca, textoSeguro, TIPOS_OBRA, totais, validadePadrao, type Empresa, type Estado, type Leitura, type Orc, type Passo, type Pergunta } from '@/lib/orc';
 import { carregarFontes, descarregar, gerarPDF, nomeFicheiro } from '@/lib/pdf';
 import { gerarToken, instantaneo } from '@/lib/proposta';
 import { supabaseBrowser } from '@/lib/supabase/client';
@@ -24,6 +24,7 @@ const ERROS: Record<string, string> = {
   so_premium: 'A proposta completa faz parte do plano Premium. Escolha a proposta rápida ou mude de plano no menu "Plano".',
   limite_mensal: 'Chegou ao limite de orçamentos com IA deste mês. A IA volta no dia 1 do próximo mês; para continuar já, suba de plano no menu "Plano".',
   limite_experimental: 'Já usou os orçamentos com IA do período experimental. Os orçamentos já começados continuam; para fazer orçamentos novos com a IA, escolha um plano no menu "Plano".',
+  limite_ate_pagar: 'Já usou os orçamentos com IA dos dias grátis. Os orçamentos já começados continuam. O seu plano começa no fim desses dias; para começar já, use "Começar já" no menu "Plano".',
   montagens: 'Este orçamento já foi montado muitas vezes este mês. Faça os acertos na revisão ou peça um ajuste à IA.',
   limite_diario: 'Chegou ao limite diário de pedidos à IA. Volte a tentar amanhã ou fale connosco.',
   rate_limited: 'A IA está com muitos pedidos neste momento. Espere um pouco e tente de novo.',
@@ -70,6 +71,7 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
   // Grava 0,7 s depois da última alteração, nunca mais de 3 s depois da primeira por gravar, e logo nas mudanças
   // importantes (passo, aprovação, envio). Ao sair da página ou mudar de app, grava o que estiver pendente.
   const primeira = useRef(true);
+  const ativo = useRef(S.tempo?.ativo_s || 0);
   const pendente = useRef(false);
   const pendenteDesde = useRef(0);
   const urgente = useRef(false);
@@ -77,7 +79,7 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
   ultimo.current = S;
   const gravar = useCallback(async () => {
     pendente.current = false; pendenteDesde.current = 0;
-    const E = ultimo.current;
+    const E = { ...ultimo.current, tempo: { ...ultimo.current.tempo, ativo_s: Math.round(ativo.current) } };
     const total = E.orc && linhas(E.orc).length ? totais(E.orc, empresa).total : null;
     const { error } = await sb.from('orcamentos').update({
       dados: E, estado: E.aprovado ? 'aprovado' : 'rascunho', numero: E.meta.numero, tipo: E.pedido.tipo,
@@ -102,6 +104,17 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
     document.addEventListener('visibilitychange', escondida);
     return () => { window.removeEventListener('pagehide', agora); document.removeEventListener('visibilitychange', escondida); agora(); };
   }, [gravar]);
+
+  /* ---------- tempo ativo (medida da beta) ---------- */
+  // Conta de 5 em 5 segundos, só com a página visível e alguma ação no último minuto.
+  const ultimaAcao = useRef(Date.now());
+  useEffect(() => {
+    const acao = () => { ultimaAcao.current = Date.now(); };
+    const ev = ['pointerdown', 'keydown', 'input', 'scroll'] as const;
+    ev.forEach((e) => window.addEventListener(e, acao, { passive: true }));
+    const t = setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - ultimaAcao.current < 60000) ativo.current += 5; }, 5000);
+    return () => { ev.forEach((e) => window.removeEventListener(e, acao)); clearInterval(t); };
+  }, []);
 
   /* ---------- miniaturas (links assinados, 1 hora) ---------- */
   useEffect(() => {
@@ -271,7 +284,7 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
       empresa.logo_path ? bytesDe(sb, 'logos', empresa.logo_path) : Promise.resolve(null),
       ...S.fotos.map((f) => bytesDe(sb, 'fotos', f.path))
     ]);
-    return { empresa, logo, pedido: S.pedido, meta: S.meta, orc: S.orc!, totais: totais(S.orc, empresa), fotos, leitura: S.leitura, exemplo: false, modelo: S.modelo, mostrarPrecos: S.mostrar_precos, fontes: fontes as Awaited<ReturnType<typeof carregarFontes>> };
+    return { empresa, logo, pedido: S.pedido, meta: S.meta, orc: S.orc!, totais: totais(S.orc, empresa), fotos, leitura: S.leitura, exemplo: !!S.exemplo, modelo: S.modelo, mostrarPrecos: S.mostrar_precos, fontes: fontes as Awaited<ReturnType<typeof carregarFontes>> };
   }
   async function pdf(partilhar: boolean) {
     if (!S.orc) return;
@@ -610,7 +623,9 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
           <p className="small muted" role="status">{pdfStatus}</p>
           {custoIa !== null ? <p className="small muted">Custo de IA deste orçamento: {custoIa.toFixed(2).replace('.', ',')} US$</p> : null}
         </section>
-        <section className="sheet enviar" aria-labelledby="lab-env">
+        {S.exemplo ? (
+          <section className="callout warn" aria-label="Orçamento de exemplo"><strong>Este é um orçamento de exemplo</strong><p className="small">Tem valores fictícios e o PDF diz &quot;exemplo&quot;: serve para ver o resultado, não para enviar a clientes. Para a sua obra, crie um orçamento novo.</p><form action="/orcamentos/novo" method="post"><button className="btn primary sm">Criar um orçamento novo</button></form></section>
+        ) : <section className="sheet enviar" aria-labelledby="lab-env">
           <div className="sh-h"><h2 id="lab-env">Enviar ao cliente</h2>{enviadoTxt ? <span className="small ok-msg">{enviadoTxt}</span> : null}</div>
           <div className="f-grid">
             <label className="f"><span className="lab">Telemóvel</span><input type="tel" inputMode="tel" value={S.pedido.telefone || ''} placeholder="Ex.: 912 345 678" onChange={(e) => upd((d) => { d.pedido.telefone = e.target.value; })} /></label>
@@ -633,7 +648,16 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
           <p className="sh-f small muted">{pagina
             ? 'Abre a conversa ou o email já com a mensagem abaixo e o link da página da proposta, com a sua marca: o cliente vê os trabalhos, descarrega o PDF e pode aceitar a proposta. Só envia quando confirmar na aplicação.'
             : 'Abre a conversa ou o email já com a mensagem abaixo e um link seguro para o PDF, válido durante a validade da proposta. Só envia quando confirmar na aplicação.'}</p>
-        </section>
+        </section>}
+        {!S.tempo?.antes && !S.exemplo ? (
+          <section className="card ms antes" aria-labelledby="lab-antes">
+            <span className="lab" id="lab-antes">Ajude-nos a medir (opcional)</span>
+            <p className="small">Sem o Prumo, quanto tempo levaria a preparar este orçamento?</p>
+            <div className="chips" role="group" aria-labelledby="lab-antes">
+              {TEMPO_ANTES.map((a) => <button key={a} type="button" className="chip" onClick={() => { urgente.current = true; upd((d) => { d.tempo = { ...d.tempo, ativo_s: Math.round(ativo.current), antes: a }; }); toast('Obrigado!'); }}>{a}</button>)}
+            </div>
+          </section>
+        ) : null}
         <section className="sheet">
           <div className="sh-h"><span className="lab" id="lab-msg">Mensagem</span><button className="link" onClick={escreverMensagem}>{S.mensagem ? 'Escrever outra' : 'Escrever com a IA'}</button></div>
           <div className="f"><AreaTexto rows={6} aria-labelledby="lab-msg" value={S.mensagem} placeholder="Carregue em “Escrever com a IA” ou escreva aqui." onChange={(e) => upd((d) => { d.mensagem = e.target.value; })} /><Ditado valor={S.mensagem} onValor={(v) => upd((d) => { d.mensagem = v; })} /></div>
@@ -654,7 +678,7 @@ export default function Editor({ orcId, userId, inicial, empresa, premium = true
   else if (S.step === 'leitura' && S.leitura) corpo = vLeitura();
   else if (S.step === 'perguntas' && S.perguntas) corpo = vPerguntas();
   else if (S.step === 'medidas' && S.medidas) corpo = vMedidas();
-  else if (S.step === 'revisao' && S.orc) corpo = busy ? vOcupado() : <Revisao S={S} upd={upd} empresa={empresa} premium={premium} ocupado={!!busy} custoIa={custoIa} onAjuste={aplicarAjuste} onVoltar={() => go('medidas')} toast={toast} onAprovar={() => { upd((d) => { d.aprovado = true; }); setPdfStatus(''); go('pdf'); }} />;
+  else if (S.step === 'revisao' && S.orc) corpo = busy ? vOcupado() : <Revisao S={S} upd={upd} empresa={empresa} premium={premium} ocupado={!!busy} custoIa={custoIa} onAjuste={aplicarAjuste} onVoltar={() => go('medidas')} toast={toast} onAprovar={() => { upd((d) => { d.aprovado = true; if (!d.tempo?.aprovado_s) d.tempo = { ...d.tempo, ativo_s: Math.round(ativo.current), aprovado_s: Math.round(ativo.current) }; }); setPdfStatus(''); go('pdf'); }} />;
   else if (S.step === 'pdf' && S.orc && S.aprovado) corpo = vPdf();
   else corpo = vPedido();
 

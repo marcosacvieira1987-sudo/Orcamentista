@@ -1,4 +1,4 @@
--- Atualização da base de dados de produção: migrações 0002 a 0006 numa só vez.
+-- Atualização da base de dados de produção: migrações 0002 a 0007 numa só vez.
 -- Seguro de repetir: o que já existir fica como está.
 -- Supabase → SQL Editor → New query → colar tudo → Run.
 
@@ -161,7 +161,18 @@ create policy "propostas: atualizar" on public.propostas for update using ((sele
 create policy "propostas: apagar" on public.propostas for delete using ((select auth.uid()) = user_id);
 -- O cliente não tem conta: a página e o "Aceitar" passam pelo servidor, que procura a proposta pelo token.
 
+-- ============ 0007: só se publica a proposta de um orçamento da própria conta ============
+-- Só se publica a página de uma proposta de um orçamento da própria conta.
+-- Seguro de repetir.
+drop policy if exists "propostas: publicar" on public.propostas;
+drop policy if exists "propostas: atualizar" on public.propostas;
+create policy "propostas: publicar" on public.propostas for insert
+  with check ((select auth.uid()) = user_id and exists (select 1 from public.orcamentos o where o.id = orcamento_id and o.user_id = (select auth.uid())));
+create policy "propostas: atualizar" on public.propostas for update
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id and exists (select 1 from public.orcamentos o where o.id = orcamento_id and o.user_id = (select auth.uid())));
+
 -- a API passa a ver as colunas novas de imediato
 notify pgrst, 'reload schema';
 
-select 'Base de dados atualizada (0002 a 0006)' as resultado;
+select 'Base de dados atualizada (0002 a 0007)' as resultado;

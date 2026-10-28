@@ -5,6 +5,7 @@ import { PRODUTO } from '@/lib/marca';
 import { descObra, planoPagamentos, resumoFases, semIva, subtotal, totais, totalLinha, valorCapitulo } from '@/lib/orc';
 import { empresaDe, validadeDe, type Instantaneo } from '@/lib/proposta';
 import { fmtEUR, fmtQ, maiuscula } from '@/lib/util';
+import RegistarVisita from './RegistarVisita';
 import './proposta.css';
 
 export type Aceite = { nome: string; em: string } | null;
@@ -39,6 +40,7 @@ export default function PropostaCliente({ snap, token, logoUrl, pdfUrl, fotoUrls
 
   return (
     <div className={'pc pc-' + estilo} style={{ ['--marca' as string]: marca, ['--marca-ink' as string]: textoSobre(marca), ['--marca2' as string]: e.cor2 || marca }}>
+      <RegistarVisita token={token} />
       <header className="pc-topo">
         <div className="pc-in pc-topo-in">
           <div className="pc-marca">

@@ -103,6 +103,9 @@ const { data: pubAnon } = await anon.from('propostas').select('*');
 ok(!pubAnon || pubAnon.length === 0, 'sem sessão não se lê nenhuma proposta publicada');
 const { error: pubCurto } = await A.sb.from('propostas').insert({ token: 'curto', orcamento_id: orcA.id, dados: {} });
 ok(!!pubCurto, 'tokens curtos (adivinháveis) são recusados');
+const tokB = [...crypto.getRandomValues(new Uint8Array(24))].map((x) => x.toString(16).padStart(2, '0')).join('');
+const { error: pubAlheio } = await B.sb.from('propostas').insert({ token: tokB, orcamento_id: orcA.id, dados: {} });
+ok(!!pubAlheio, 'B não publica uma proposta com o orçamento de A');
 
 console.log(falhas ? `\n${falhas} falha(s)` : '\nTudo isolado.');
 process.exit(falhas ? 1 : 0);

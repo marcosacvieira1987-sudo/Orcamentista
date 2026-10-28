@@ -12,7 +12,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!orig) return redirecionar('/orcamentos');
   const base = { ...novoEstado(), ...(orig.dados as Partial<Estado>) };
   const copia: Estado = {
-    ...base, fotos: [], aprovado: false, revisto: false, mensagem: '',
+    ...base, fotos: [], aprovado: false, revisto: false, mensagem: '', tempo: undefined,
     meta: { numero: '', data: '', validade: base.meta?.validade || '', prazo: base.meta?.prazo || '' },
     step: base.orc ? 'revisao' : 'pedido'
   };
