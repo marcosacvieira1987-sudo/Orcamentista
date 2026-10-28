@@ -55,7 +55,8 @@ A lógica, os prompts e o desenho vêm do protótipo `Orçamentista` (HTML únic
    - `supabase/migrations/0005_planos_lancamento.sql` — plano Essencial, período mensal/anual, preço de lançamento e garantia.
    - `supabase/migrations/0006_espaco_personalizado.sql` — marca, textos, modelo de apresentação e página da proposta para o cliente.
    - `supabase/migrations/0007_propostas_do_dono.sql` — só se publica a proposta de um orçamento da própria conta.
-   - Em produção, basta correr `supabase/atualizar-producao.sql`, que junta 0002 a 0007.
+   - `supabase/migrations/0008_reservar_uso_ia.sql` — limite diário da IA reservado antes de cada chamada. **Aplique antes de publicar o código que a usa**: sem ela, a IA responde "indisponível" (falha fechada).
+   - Em produção, basta correr `supabase/atualizar-producao.sql`, que junta 0002 a 0008 (seguro de repetir).
 3. *Authentication → URL Configuration*:
    - **Site URL**: o endereço da app (ex.: `https://prumo.vercel.app`).
    - **Redirect URLs**: `https://prumo.vercel.app/auth/confirmar` (e `http://localhost:3000/auth/confirmar` para desenvolvimento).
@@ -68,7 +69,7 @@ Copie `.env.example` para `.env.local` (local) e defina as mesmas no Vercel (*Se
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Chave pública (`sb_publishable_…`, ou a antiga `anon`) |
-| `SUPABASE_SECRET_KEY` | Chave secreta (`sb_secret_…`, ou a antiga `service_role`). Para apagar contas e gravar as subscrições |
+| `SUPABASE_SECRET_KEY` | Chave secreta (`sb_secret_…`, ou a antiga `service_role`). Para apagar contas, gravar as subscrições e registar o limite diário da IA |
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) → API Keys |
 | `LIMITE_IA_DIA` | Opcional (80) |
 | `STRIPE_*`, `CONTAS_ADMIN`, `CONTAS_ISENTAS`, `BETA_EMAILS`, `LANCAMENTO_*` | Pagamentos e lançamento: passo a passo em [`docs/pagamentos.md`](docs/pagamentos.md) |

@@ -56,6 +56,8 @@ http.createServer(async (req, res) => {
     const s = db.subs[p.split('/')[3]]; if (!s) return json(res, 404, { error: { message: 'no such subscription', type: 'invalid_request_error' } });
     if (M === 'DELETE') s.status = 'canceled';
     if (M === 'POST' && b['items[0][price]']) { s.items.data[0].price = db.precos.find((x) => x.id === b['items[0][price]']); s._proration = b.proration_behavior; }
+    // "Começar já": acaba o período grátis e cobra logo (o cartão de teste aceita sempre)
+    if (M === 'POST' && b.trial_end === 'now') { const agora = Math.floor(Date.now() / 1000); s.status = 'active'; s.trial_end = agora; s._payment_behavior = b.payment_behavior; s.items.data[0].current_period_end = agora + (s.items.data[0].price?.recurring?.interval === 'year' ? 365 : 30) * 86400; }
     return json(res, 200, s);
   }
   if (M === 'POST' && p === '/v1/billing_portal/sessions') return json(res, 200, { id: 'bps_1', object: 'billing_portal.session', url: 'http://127.0.0.1:12111/portal?c=' + b.customer + '&conf=' + (b.configuration || '') });

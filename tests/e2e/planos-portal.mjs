@@ -16,10 +16,16 @@ if (fase === 'normal') {
   ok(await p.getByText(/mantém os \d+ dias grátis que faltam/).count() === 1, 'na experiência: aviso de que mantém os dias grátis');
   await p.getByRole('button', { name: 'Subscrever o Pro' }).click(); await p.waitForURL('**/planos?sessao=*');
   ok(await p.getByText(/mantém os \d+ dias grátis que faltam/).count() === 0, 'aviso de manter os dias grátis já não aparece depois de subscrever');
-  ok((await p.locator('.plano-sit strong').first().innerText()) === 'Plano Pro mensal ativo', 'Pro mensal ativo durante a experiência');
+  ok((await p.locator('.plano-sit strong').first().innerText()) === 'Plano Pro mensal escolhido', 'Pro mensal escolhido durante a experiência');
+  const sit = await p.locator('.plano-sit').innerText();
+  ok(sit.includes('continua com a experiência') && sit.includes('0 de 2'), 'até pagar: continua a experiência com 2 orçamentos com IA');
   ok(sql(`select estado||'|'||(periodo_fim > now() + interval '12 days')||'|'||(primeira_compra is null) from assinaturas where user_id='${uid}'`) === 'trialing|true|true', 'mantém os dias grátis: 1.ª cobrança no fim da experiência, garantia só depois de pagar');
   await p.getByRole('button', { name: /Passar a anual/ }).click(); await p.waitForURL('**/planos?mudou=1');
   ok(sql(`select plano||'/'||periodo from assinaturas where user_id='${uid}'`) === 'pro/anual', 'passou a anual');
+  await p.getByRole('button', { name: 'Começar já' }).click(); await p.waitForURL('**/planos?comecou=1');
+  ok(sql(`select estado||'|'||(primeira_compra is not null) from assinaturas where user_id='${uid}'`) === 'active|true', 'começar já: cobra logo e conta como primeira compra');
+  ok((await p.locator('.plano-sit strong').first().innerText()) === 'Plano Pro anual ativo' && (await p.locator('.plano-sit').innerText()).includes('0 de 12'), 'começar já: plano todo (12 orçamentos)');
+  ok(await p.getByRole('button', { name: 'Começar já' }).count() === 0, 'começar já: o botão desaparece');
   await p.getByRole('button', { name: /Pagamento, faturas/ }).click(); await p.waitForURL(M + '/portal*');
   ok(/conf=bpc_/.test(p.url()), 'portal abre com a configuração do Prumo');
   const sub = sql(`select stripe_subscription from assinaturas where user_id='${uid}'`);
