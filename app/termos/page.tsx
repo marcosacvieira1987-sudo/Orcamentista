@@ -24,7 +24,7 @@ export default function Termos() {
       <p>Cada conta é de uma empresa ou profissional. Os dados indicados devem ser verdadeiros e a palavra-passe deve ficar só consigo. É responsável pelo que for feito com a sua conta.</p>
 
       <h2>4. Período experimental</h2>
-      <p>As contas novas têm 14 dias grátis, sem pedir cartão, com as funções do plano Premium e até {LIMITE_EXPERIMENTAL} orçamentos com inteligência artificial. No fim, para continuar a usar a inteligência artificial é preciso escolher um plano. Os orçamentos e PDF já feitos continuam acessíveis.</p>
+      <p>As contas novas têm 14 dias grátis, sem pedir cartão, com as funções do plano Premium e até {LIMITE_EXPERIMENTAL} orçamentos com inteligência artificial para os 14 dias todos (este limite não volta a zero no início do mês). No fim, para continuar a usar a inteligência artificial é preciso escolher um plano. Os orçamentos e PDF já feitos continuam acessíveis.</p>
 
       <h2>5. Planos e preços</h2>
       <p>Preços sem IVA; acresce IVA à taxa legal (23 %).</p>
@@ -40,7 +40,7 @@ export default function Termos() {
       <p>Entre {fmtData(inicio)} e {fmtData(fim)} (hora de Lisboa) os planos estão à venda ao preço de lançamento: {ORDEM.map((p) => `${PLANOS[p].nome} ${fmtPreco(PLANOS[p].precos.lancamento.mensal)} por mês ou ${fmtPreco(PLANOS[p].precos.lancamento.anual)} por ano`).join('; ')}, mais IVA. Quem subscreve ao preço de lançamento mantém-no nas renovações e nas mudanças de plano enquanto não cancelar; se cancelar e voltar a subscrever, aplica-se o preço normal. Os participantes no programa de testes (beta) podem aderir ao preço de lançamento sem prazo, com o primeiro mês grátis.</p>
 
       <h2>7. Pagamento, renovação e mudanças de plano</h2>
-      <p>O pagamento é antecipado, mensal ou anual, processado pelo Stripe, e renova-se automaticamente até ser cancelado. Se subscrever durante o período experimental, os dias grátis que faltam mantêm-se e a primeira cobrança é no fim desse período. Pode mudar de plano ou de período a qualquer momento no menu Plano: a diferença é calculada em proporção ao tempo que falta e cobrada ou creditada na hora. Alterações de preço são comunicadas por email com pelo menos 30 dias de antecedência e só se aplicam a partir da renovação seguinte.</p>
+      <p>O pagamento é antecipado, mensal ou anual, processado pelo Stripe, e renova-se automaticamente até ser cancelado. Se subscrever durante o período experimental, os dias grátis que faltam mantêm-se e a primeira cobrança é no fim desse período; até lá valem as condições do período experimental. Pode começar o plano mais cedo, na página Plano, com a cobrança nesse momento. Pode mudar de plano ou de período a qualquer momento no menu Plano: a diferença é calculada em proporção ao tempo que falta e cobrada ou creditada na hora. Alterações de preço são comunicadas por email com pelo menos 30 dias de antecedência e só se aplicam a partir da renovação seguinte.</p>
 
       <h2>8. Garantia de 30 dias</h2>
       <p>Na primeira compra de cada conta, se não ficar satisfeito, pode pedir o reembolso total nos 30 dias seguintes ao primeiro pagamento, escrevendo para o contacto indicado no ponto 1. A garantia aplica-se uma única vez por conta.</p>

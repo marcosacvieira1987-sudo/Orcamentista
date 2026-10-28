@@ -2,7 +2,7 @@ import Link from 'next/link';
 import AdminStripe from '@/components/AdminStripe';
 import Topo from '@/components/Topo';
 import { marcaDaConta } from '@/lib/marca-app';
-import { lerAcesso, usoMensal, type Acesso } from '@/lib/plano';
+import { contaNaExperiencia, lerAcesso, usoExperimental, usoMensal, type Acesso } from '@/lib/plano';
 import { ehAdmin, ehBeta, fmtDataLisboa as fmtData, fmtPreco, janelaLancamento, lancamentoAberto, ORDEM, PLANOS, type Periodo, type Tarifa } from '@/lib/planos';
 import { SITE } from '@/lib/site';
 import { sincronizarSubscricao, stripe, stripeConfigurado } from '@/lib/stripe';
@@ -14,6 +14,7 @@ const ERROS: Record<string, string> = {
   config: 'Os pagamentos ainda não estão ativos. Tente mais tarde ou fale connosco.',
   stripe: 'Não foi possível falar com o serviço de pagamentos. Tente de novo dentro de momentos.',
   'ja-subscrito': 'Já tem uma subscrição ativa. Para mudar de plano, use os botões abaixo.',
+  cobranca: 'O banco não aceitou a cobrança agora. Os dias grátis continuam e a primeira cobrança faz-se no fim, como previsto. Pode atualizar o cartão em "Pagamento, faturas e cancelamento".',
 };
 
 function situacao(a: Acesso): { titulo: string; texto: string; tom: '' | 'warn' | 'crit' } {
@@ -22,13 +23,14 @@ function situacao(a: Acesso): { titulo: string; texto: string; tom: '' | 'warn' 
   const tarifa = a.lancamento ? ' Tem o preço de lançamento enquanto não cancelar.' : '';
   if (a.via === 'isento') return { titulo: 'Acesso total', texto: 'Esta conta tem todas as funções incluídas, sem limite.', tom: '' };
   if (a.via === 'subscricao' && a.estado === 'past_due') return { titulo: `Plano ${nome}: pagamento em atraso`, texto: 'A última cobrança falhou. Atualize o cartão em "Pagamento e faturas" para não perder o acesso.', tom: 'crit' };
+  if (a.ateAoPagamento) return { titulo: `Plano ${nome} ${a.periodo === 'anual' ? 'anual' : 'mensal'} escolhido`, texto: `Grátis até ${fim}: a primeira cobrança é nesse dia, e o plano começa aí.${tarifa} Até lá continua com a experiência: as funções do Premium e ${a.limite} orçamentos com IA.`, tom: '' };
   if (a.via === 'subscricao' && a.estado === 'trialing') return { titulo: `Plano ${nome} ${a.periodo === 'anual' ? 'anual' : 'mensal'} ativo`, texto: `Grátis até ${fim}: a primeira cobrança é nesse dia.${tarifa}`, tom: '' };
   if (a.via === 'subscricao') return { titulo: `Plano ${nome} ${a.periodo === 'anual' ? 'anual' : 'mensal'} ativo`, texto: (a.cancelaNoFim ? `Termina a ${fim}. Até lá mantém todas as funções do plano.` : fim ? `Renova a ${fim}.` : '') + tarifa, tom: '' };
   if (a.via === 'experimental') return { titulo: `Período experimental: ${a.diasExperimental === 1 ? 'falta 1 dia' : `faltam ${a.diasExperimental} dias`}`, texto: `Tem as funções do Premium, até ${a.limite} orçamentos com IA. Escolha um plano para continuar depois disso.`, tom: a.diasExperimental <= 5 ? 'warn' : '' };
   return { titulo: 'Sem plano ativo', texto: 'Os seus orçamentos e PDF continuam disponíveis, mas a IA está em pausa. Escolha um plano para continuar.', tom: 'crit' };
 }
 
-export default async function Planos({ searchParams }: { searchParams: Promise<{ sessao?: string; erro?: string; mudou?: string; periodo?: string }> }) {
+export default async function Planos({ searchParams }: { searchParams: Promise<{ sessao?: string; erro?: string; mudou?: string; comecou?: string; periodo?: string }> }) {
   const { sb, id, email } = await exigirUtilizador();
   const q = await searchParams;
 
@@ -46,6 +48,7 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
 
   const [{ data: emp }, acesso, mes] = await Promise.all([sb.from('empresas').select('nome, cor, logo_path').maybeSingle(), lerAcesso(sb, id, email), usoMensal(sb)]);
   const sit = situacao(acesso);
+  const exp = contaNaExperiencia(acesso) ? await usoExperimental(sb) : null;
   const marca = await marcaDaConta(sb, acesso, emp);
   const subscrito = acesso.via === 'subscricao';
 
@@ -61,17 +64,25 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
       <Topo empresa={emp?.nome} atual="planos" marca={marca} />
       <main>
         <div className="planos-palco">
-        {SITE.video.mp4 ? <video className="auth-video" autoPlay muted loop playsInline preload="metadata" poster={SITE.video.poster || undefined} aria-hidden="true"><source src={SITE.video.mp4} type="video/mp4" /></video> : null}
+        {SITE.videoPlanos.mp4 ? <video className="auth-video" autoPlay muted loop playsInline preload="metadata" poster={SITE.videoPlanos.poster || undefined} aria-hidden="true"><source src={SITE.videoPlanos.mp4} type="video/mp4" /></video> : null}
         <section className="intro"><span className="eyebrow">Subscrição</span><h1>O seu plano</h1></section>
         {pago ? <p className="callout ok-box" role="status"><strong>Pagamento recebido. Obrigado!</strong> O plano já está ativo.</p> : null}
         {q.mudou ? <p className="callout ok-box" role="status"><strong>Plano alterado.</strong> A diferença foi acertada na fatura.</p> : null}
+        {q.comecou ? <p className="callout ok-box" role="status"><strong>Plano começado.</strong> O pagamento foi feito agora e já tem os orçamentos todos do plano.</p> : null}
         {q.erro && ERROS[q.erro] ? <p className="callout crit" role="alert">{ERROS[q.erro]}</p> : null}
 
         <section className={'callout plano-sit' + (sit.tom ? ' ' + sit.tom : '')}>
           <strong>{sit.titulo}</strong>
           {sit.texto ? <p className="small">{sit.texto}</p> : null}
-          {acesso.plano && Number.isFinite(acesso.limite) ? (
-            <p className="small"><strong className="num">{mes.usados} de {acesso.limite}</strong> orçamentos com IA este mês · o contador volta a zero a {fmtData(mes.renova)}</p>
+          {acesso.plano && Number.isFinite(acesso.limite) ? (exp
+            ? <p className="small"><strong className="num">{exp.usados} de {acesso.limite}</strong> orçamentos com IA no período experimental</p>
+            : <p className="small"><strong className="num">{mes.usados} de {acesso.limite}</strong> orçamentos com IA este mês · o contador volta a zero a {fmtData(mes.renova)}</p>
+          ) : null}
+          {acesso.ateAoPagamento && acesso.plano ? (
+            <form action="/api/pagamentos/comecar" method="post">
+              <p className="small muted">Quer o plano todo já? Com &quot;Começar já&quot; paga hoje e passa a ter {PLANOS[acesso.plano].limite} orçamentos com IA por mês.</p>
+              <button className="btn sm primary">Começar já</button>
+            </form>
           ) : null}
           {subscrito && garantiaAte && garantiaAte > new Date() ? <p className="small muted">Garantia de 30 dias até {fmtData(garantiaAte)}: se não ficar satisfeito, escreva-nos e devolvemos o valor total.</p> : null}
           {acesso.cliente ? (
@@ -86,7 +97,7 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
         ) : null}
 
         {acesso.via === 'experimental' && acesso.diasExperimental > 2 && !beta ? (
-          <p className="small muted">Se subscrever agora, mantém os {acesso.diasExperimental} dias grátis que faltam: a primeira cobrança é só no fim da experiência.</p>
+          <p className="small muted">Se subscrever agora, mantém os {acesso.diasExperimental} dias grátis que faltam: a primeira cobrança é só no fim da experiência e, até lá, continua com {acesso.limite} orçamentos com IA. Se quiser o plano todo mais cedo, pode começá-lo já, depois de subscrever.</p>
         ) : null}
         <nav className="chips periodo" aria-label="Período de pagamento">
           <Link href="/planos?periodo=mensal" className="chip" aria-current={periodo === 'mensal' ? 'true' : undefined}>Mensal</Link>

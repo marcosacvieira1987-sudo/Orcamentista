@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ASSINATURA, PRODUTO, PRODUTO_CURTO } from '@/lib/marca';
 import { fmtDataLisboa as fmtData, fmtPreco, janelaLancamento, lancamentoAberto, PLANOS } from '@/lib/planos';
 import { SITE } from '@/lib/site';
+import HeroFilme from './HeroFilme';
 import './landing.css';
 
 // Página de apresentação para quem ainda não tem sessão. Os textos estão em lib/site.ts.
@@ -49,25 +50,29 @@ export default function Landing() {
       </header>
 
       <main>
-        <section className={'lp-hero' + (video.mp4 ? ' com-video' : '')}>
-          {video.mp4 ? <video className="lp-video" autoPlay muted loop playsInline preload="metadata" poster={video.poster || undefined} aria-hidden="true"><source src={video.mp4} type="video/mp4" /></video> : null}
-          <div className="lp-in">
-            <p className="lp-eyebrow">{hero.eyebrow}</p>
-            <h1>{hero.titulo.map((l, i) => <span key={i} className={i ? 'lp-hl' : undefined}>{l}</span>)}</h1>
-            <p className="lp-hero-txt">{hero.texto}</p>
-            <div className="lp-ctas">
-              <Link href="/registar" className="lp-btn lp-btn-lg">{hero.cta}<Icone n="seta" s={18} /></Link>
-              <a href="#proposta" className="lp-btn lp-btn-lg lp-btn-ghost">{hero.secundario}</a>
+        <section className={'lp-hero' + (video.mp4 ? ' lp-hero-filme' : '')}>
+          <div className={'lp-in' + (video.mp4 ? ' lp-hero-grid' : '')}>
+            <div>
+              <p className="lp-eyebrow">{hero.eyebrow}</p>
+              <h1>{hero.titulo.map((l, i) => <span key={i} className={i ? 'lp-hl' : undefined}>{l}</span>)}</h1>
+              <p className="lp-hero-txt">{hero.texto}</p>
+              <div className="lp-ctas">
+                <Link href="/registar" className="lp-btn lp-btn-lg">{hero.cta}<Icone n="seta" s={18} /></Link>
+                <a href="#proposta" className="lp-btn lp-btn-lg lp-btn-ghost">{hero.secundario}</a>
+              </div>
+              <div className="lp-factos" aria-label="Em números">
+                {factos.map((f) => <div key={f.rotulo}><strong>{f.valor}</strong><span>{f.rotulo}</span></div>)}
+              </div>
             </div>
-            <div className="lp-factos" aria-label="Em números">
-              {factos.map((f) => <div key={f.rotulo}><strong>{f.valor}</strong><span>{f.rotulo}</span></div>)}
+            {video.mp4 ? <HeroFilme mp4={video.mp4} poster={video.poster || undefined} mostrarEm={video.cartas} desde={fmtPreco(PLANOS.essencial.precos[tarifa].mensal)} /> : null}
+          </div>
+          {video.mp4 ? null : (
+            <div className="lp-leque" aria-hidden="true">
+              <img src="/landing/pagina-03.webp" alt="" width={900} height={1272} className="lp-folha f1" />
+              <img src="/landing/pagina-01.webp" alt="" width={900} height={1272} className="lp-folha f2" />
+              <img src="/landing/pagina-04.webp" alt="" width={900} height={1272} className="lp-folha f3" />
             </div>
-          </div>
-          <div className="lp-leque" aria-hidden="true">
-            <img src={montra.paginas[1].src} alt="" width={900} height={1272} className="lp-folha f1" />
-            <img src={montra.paginas[0].src} alt="" width={900} height={1272} className="lp-folha f2" />
-            <img src={montra.paginas[2].src} alt="" width={900} height={1272} className="lp-folha f3" />
-          </div>
+          )}
         </section>
 
 
@@ -92,7 +97,7 @@ export default function Landing() {
           <div className="lp-montra" tabIndex={0} aria-label="Páginas de uma proposta de exemplo">
             {montra.paginas.map((p) => (
               <figure key={p.src}>
-                <img src={p.src} alt={`Exemplo: ${p.legenda}`} width={900} height={1272} loading="lazy" />
+                <img src={p.src} alt={`Exemplo: ${p.legenda}`} width={960} height={1280} loading="lazy" />
                 <figcaption>{p.legenda}</figcaption>
               </figure>
             ))}

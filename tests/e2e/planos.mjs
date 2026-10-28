@@ -43,7 +43,7 @@ await shot(A.p, 'admin');
 // ---------- B. experiência e limite mensal ----------
 const U = await conta(`plano-${Date.now()}@teste.pt`, 'Obras Silva');
 await U.p.goto(B + '/planos');
-ok((await U.p.locator('.plano-sit').innerText()).includes('até 6 orçamentos com IA'), 'experiência: funções Premium com limite 6');
+ok((await U.p.locator('.plano-sit').innerText()).includes('até 2 orçamentos com IA'), 'experiência: funções Premium com 2 orçamentos com IA');
 ok((await U.p.locator('.plano-app').count()) === 3, 'três planos na página');
 ok((await U.p.locator('.plano-app.destaque h2').innerText()) === 'Pro' && (await U.p.locator('.plano-app.destaque .estado').innerText()).toLowerCase().includes('mais popular'), 'selo "Mais popular" no Pro');
 const precosM = await U.p.locator('.plano-preco strong').allInnerTexts();
@@ -53,16 +53,16 @@ const precosA = await U.p.locator('.plano-preco strong').allInnerTexts();
 ok(precosA.join('|') === '290 €|590 €|1.800 €', `preços normais anuais (${precosA.join(', ')})`);
 await shot(U.p, 'experimental-anual');
 
-const usados = Array.from({ length: 6 }, () => novoOrc(U.uid));
+const usados = Array.from({ length: 2 }, () => novoOrc(U.uid));
 for (const o of usados) sql(`insert into uso_ia (user_id, acao, orcamento_id, tokens_in, tokens_out, custo_usd) values ('${U.uid}', 'orcamento', '${o}', 1000, 500, 0.05)`);
 // pedido que falhou (tokens 0) não conta
 const falhado = novoOrc(U.uid); sql(`insert into uso_ia (user_id, acao, orcamento_id, tokens_in) values ('${U.uid}', 'orcamento', '${falhado}', 0)`);
 await U.p.goto(B + '/orcamentos');
-ok(await visivel(U.p.getByText('Usou os 6 orçamentos com IA deste mês')), 'lista: aviso de limite atingido');
-ok((await U.p.locator('.r-ia strong').innerText()).replace(/\s+/g, ' ') === '6 de 6', 'lista: contador 6 de 6');
+ok(await visivel(U.p.getByText('Usou os 2 orçamentos com IA do período experimental')), 'lista: aviso de limite da experiência');
+ok((await U.p.locator('.r-ia strong').innerText()).replace(/\s+/g, ' ') === '2 de 2', 'lista: contador 2 de 2');
 await shot(U.p, 'limite');
 const novo = novoOrc(U.uid);
-ok((await ia(U.p, { acao: 'perguntas', ctx: ctxIA, orcamentoId: novo }))[1] === 'limite_mensal', 'orçamento novo bloqueado (limite_mensal)');
+ok((await ia(U.p, { acao: 'perguntas', ctx: ctxIA, orcamentoId: novo }))[1] === 'limite_experimental', 'orçamento novo bloqueado (limite_experimental)');
 ok((await ia(U.p, { acao: 'perguntas', ctx: ctxIA, orcamentoId: usados[0] }))[0] === 200, 'orçamento já contado continua a funcionar');
 ok((await ia(U.p, { acao: 'perguntas', ctx: ctxIA }))[0] === 400, 'pedido sem orçamento recusado');
 const alheio = novoOrc(A.uid);
@@ -75,7 +75,11 @@ await U.p.getByRole('button', { name: 'Subscrever o Essencial' }).click();
 await U.p.waitForURL('**/planos?sessao=*');
 ok((await U.p.locator('.plano-sit strong').first().innerText()) === 'Plano Essencial anual ativo', 'Essencial anual ativo');
 ok(sql(`select plano||'/'||periodo||'/'||lancamento||'/'||(primeira_compra is not null) from assinaturas where user_id='${U.uid}'`) === 'essencial/anual/false/true', 'BD: essencial/anual/normal, primeira compra registada');
-ok((await U.p.locator('.plano-sit').innerText()).includes('6 de 6'), 'contador do mês mantém-se ao subscrever');
+ok((await U.p.locator('.plano-sit').innerText()).includes('2 de 6'), 'contador do mês conta os orçamentos da experiência deste mês');
+for (let i = 0; i < 4; i++) { const o = novoOrc(U.uid); usados.push(o); sql(`insert into uso_ia (user_id, acao, orcamento_id, tokens_in, tokens_out, custo_usd) values ('${U.uid}', 'orcamento', '${o}', 1000, 500, 0.05)`); }
+await U.p.reload();
+ok((await U.p.locator('.plano-sit').innerText()).includes('6 de 6'), 'Essencial: contador 6 de 6');
+ok((await ia(U.p, { acao: 'perguntas', ctx: ctxIA, orcamentoId: novo }))[1] === 'limite_mensal', 'Essencial: orçamento novo bloqueado (limite_mensal)');
 ok((await U.p.locator('.plano-sit').innerText()).includes('Garantia de 30 dias até'), 'garantia de 30 dias visível');
 ok((await ia(U.p, { acao: 'orcamento', ctx: ctxIA, orcamentoId: usados[1], modelo: 'completo' }))[1] === 'so_premium', 'Essencial: proposta completa recusada');
 const log1 = await (await fetch(M + '/teste/log')).json();

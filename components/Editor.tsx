@@ -23,6 +23,8 @@ const ERROS: Record<string, string> = {
   sem_plano: 'O período experimental terminou. Escolha um plano no menu "Plano" para continuar a usar a IA.',
   so_premium: 'A proposta completa faz parte do plano Premium. Escolha a proposta rápida ou mude de plano no menu "Plano".',
   limite_mensal: 'Chegou ao limite de orçamentos com IA deste mês. A IA volta no dia 1 do próximo mês; para continuar já, suba de plano no menu "Plano".',
+  limite_experimental: 'Já usou os orçamentos com IA do período experimental. Os orçamentos já começados continuam; para fazer orçamentos novos com a IA, escolha um plano no menu "Plano".',
+  limite_ate_pagar: 'Já usou os orçamentos com IA dos dias grátis. Os orçamentos já começados continuam. O seu plano começa no fim desses dias; para começar já, use "Começar já" no menu "Plano".',
   montagens: 'Este orçamento já foi montado muitas vezes este mês. Faça os acertos na revisão ou peça um ajuste à IA.',
   limite_diario: 'Chegou ao limite diário de pedidos à IA. Volte a tentar amanhã ou fale connosco.',
   rate_limited: 'A IA está com muitos pedidos neste momento. Espere um pouco e tente de novo.',

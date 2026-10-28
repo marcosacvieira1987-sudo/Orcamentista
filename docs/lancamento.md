@@ -32,6 +32,6 @@ Por ordem. O código está pronto e testado; estes passos só podem ser feitos p
 
 ## Quando tiver
 
-- [ ] **Vídeo do hero:** sem texto, feito no CapCut. Pôr em `public/landing/hero.mp4` (e uma imagem `hero.jpg`) e preencher `video` em `lib/site.ts`, ou enviar-me o ficheiro.
+- [x] **Vídeo do hero:** o filme "A Linha" está no site, no ecrã Entrar e no ecrã de planos (`public/landing/a-linha.mp4` e `a-linha-ato3.mp4`).
 - [ ] **Os seus negócios de gestão:** nome, frase, 3 ou 4 serviços e contacto, para ativar essa secção no site.
 - [ ] **Números da beta:** ao fim de algumas semanas, ver `/admin` (tempo antes e depois, custo de IA). Só passam para o site números verdadeiros e com amostra suficiente.
